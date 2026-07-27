@@ -19,4 +19,5 @@ Admin-only routes:
 - `/global/checker`
 - `/global/scraper`
 - `/global/blacklist`
-- `/global/other`
+- `/plugins`
+- `/plugins/geolite`
