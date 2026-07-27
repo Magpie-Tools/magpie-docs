@@ -36,6 +36,7 @@ that directory with the output of `magpie-website`.
 
 ## Related repositories
 
+- [Distribution and deployment](https://github.com/Kuucheen/magpie)
 - [Backend](https://github.com/Magpie-Tools/magpie-backend)
 - [Frontend](https://github.com/Magpie-Tools/magpie-frontend)
 - [Website](https://github.com/Magpie-Tools/magpie-website)
