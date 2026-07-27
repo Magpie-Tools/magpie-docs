@@ -14,8 +14,8 @@ const config: Config = {
   url: 'https://magpie.tools',
   baseUrl: '/docs/',
 
-  organizationName: 'Kuucheen',
-  projectName: 'magpie',
+  organizationName: 'Magpie-Tools',
+  projectName: 'magpie-docs',
 
   onBrokenLinks: 'throw',
 
@@ -31,7 +31,7 @@ const config: Config = {
         docs: {
           routeBasePath: '/',
           sidebarPath: './sidebars.ts',
-          editUrl: 'https://github.com/Kuucheen/magpie/tree/master/website/docs/',
+          editUrl: 'https://github.com/Magpie-Tools/magpie-docs/tree/main/',
         },
         blog: false,
         theme: {
@@ -60,7 +60,7 @@ const config: Config = {
           label: 'Docs',
         },
         {
-          href: 'https://github.com/Kuucheen/magpie',
+          href: 'https://github.com/Magpie-Tools',
           label: 'GitHub',
           position: 'right',
         },
@@ -100,7 +100,7 @@ const config: Config = {
             },
             {
               label: 'GitHub',
-              href: 'https://github.com/Kuucheen/magpie',
+              href: 'https://github.com/Magpie-Tools',
             },
           ],
         },

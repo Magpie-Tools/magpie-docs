@@ -2,10 +2,10 @@
 
 Magpie is a multi-component system:
 
-- Go `1.26` API server (`backend/internal/app/server`)
-- background job routines (`backend/internal/jobs/*`)
-- rotating proxy listener manager (`backend/internal/rotatingproxy`)
-- Angular `21.1` frontend (`frontend/src/app`)
+- Go `1.26` API server (`internal/app/server` in `magpie-backend`)
+- background job routines (`internal/jobs/*` in `magpie-backend`)
+- rotating proxy listener manager (`internal/rotatingproxy` in `magpie-backend`)
+- Angular `21.1` frontend (`src/app` in `magpie-frontend`)
 
 ## Startup flow
 

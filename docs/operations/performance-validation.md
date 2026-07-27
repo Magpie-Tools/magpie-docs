@@ -76,13 +76,13 @@ In that setup, pass backend logs to the drop-budget check:
 
 ```bash
 # terminal 1
-cd backend
+cd magpie-backend
 go run ./cmd/magpie 2>&1 | tee /tmp/magpie-backend.log
 ```
 
 ```bash
 # terminal 2
-cd scripts/perf
+cd magpie/scripts/perf
 PERF_BACKEND_LOG_FILE=/tmp/magpie-backend.log ./run-gate.sh
 ```
 

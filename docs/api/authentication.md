@@ -26,7 +26,8 @@ If the header is missing, malformed, or invalid, protected endpoints return `401
 
 - `RequireAuth`: endpoint requires a valid JWT.
 - `IsAdmin`: endpoint requires a valid JWT and `role=admin`.
-- Auth checks are applied to REST routes in `backend/internal/app/server/routes.go`.
+- Auth checks are applied to REST routes in
+  `internal/app/server/routes.go` in `magpie-backend`.
 
 ## Revocation behavior
 

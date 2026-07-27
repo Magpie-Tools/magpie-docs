@@ -7,22 +7,37 @@
 - npm
 - Docker (for Postgres + Redis during local dev)
 
-Current local app stack in this repository:
+The application components are maintained in separate repositories:
 
-- backend: Go `1.26`
-- frontend: Angular `21.1`, PrimeNG `21`, Tailwind CSS `4`
-- docs site: Docusaurus on Node.js `20+`
+- `magpie-backend`: Go `1.26`
+- `magpie-frontend`: Angular `21.1`, PrimeNG `21`, Tailwind CSS `4`
+- `magpie-docs`: Docusaurus on Node.js `20+`
+
+Clone the repositories as siblings so commands and tooling have a predictable
+workspace:
+
+```bash
+mkdir magpie-workspace
+cd magpie-workspace
+git clone https://github.com/Kuucheen/magpie.git
+git clone https://github.com/Magpie-Tools/magpie-backend.git
+git clone https://github.com/Magpie-Tools/magpie-frontend.git
+git clone https://github.com/Magpie-Tools/magpie-docs.git
+```
 
 ## Start infrastructure
 
 ```bash
+cd magpie
+cp .env.example .env
+# Set PROXY_ENCRYPTION_KEY in .env.
 docker compose up -d postgres redis
 ```
 
 ## Run backend
 
 ```bash
-cd backend
+cd ../magpie-backend
 go run ./cmd/magpie
 ```
 
@@ -31,8 +46,8 @@ Backend defaults to port `5656`.
 ## Run frontend
 
 ```bash
-cd frontend
-npm install
+cd ../magpie-frontend
+npm ci
 npm run start
 ```
 
@@ -41,11 +56,11 @@ Frontend dev server defaults to `http://localhost:4200`.
 ## Common dev commands
 
 ```bash
-cd backend
+cd ../magpie-backend
 go test ./...
 ```
 
 ```bash
-cd frontend
+cd ../magpie-frontend
 npm test
 ```

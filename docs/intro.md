@@ -7,7 +7,9 @@ slug: /
 
 Magpie is a self-hosted proxy manager for teams and individuals who need to ingest, validate, score, and rotate large proxy pools.
 
-This docs site is intended to be the complete technical documentation for Magpie, based on the current codebase in this repository.
+This site is the technical documentation for Magpie. The product source is
+maintained across the repositories in the
+[Magpie-Tools organization](https://github.com/Magpie-Tools).
 
 ## What Magpie does
 
@@ -20,12 +22,12 @@ This docs site is intended to be the complete technical documentation for Magpie
 
 ## System at a glance
 
-- `backend`: Go `1.26` API + worker routines + rotating proxy listeners
-- `frontend`: Angular `21.1` dashboard UI
+- [`magpie-backend`](https://github.com/Magpie-Tools/magpie-backend): Go `1.26` API + worker routines + rotating proxy listeners
+- [`magpie-frontend`](https://github.com/Magpie-Tools/magpie-frontend): Angular `21.1` dashboard UI
 - `postgres`: persistent relational storage
 - `redis`: queueing, coordination, and distributed routines
-- `website/homepage`: marketing website
-- `website/docs`: this Docusaurus documentation site
+- [`magpie-website`](https://github.com/Magpie-Tools/magpie-website): marketing website
+- [`magpie-docs`](https://github.com/Magpie-Tools/magpie-docs): this Docusaurus documentation site
 
 ## Where to start
 

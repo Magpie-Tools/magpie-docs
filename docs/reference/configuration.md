@@ -2,7 +2,8 @@
 
 Global config is modeled by `config.Config` and persisted in `data/settings.json`.
 
-Default values come from `backend/internal/config/default_settings.json`.
+Default values come from `internal/config/default_settings.json` in
+`magpie-backend`.
 
 ## Top-level sections
 

@@ -3,21 +3,21 @@
 ## Backend
 
 ```bash
-cd backend
+# In magpie-backend
 go test ./...
 ```
 
 ## Frontend
 
 ```bash
-cd frontend
+# In magpie-frontend
 npm test
 ```
 
 ## Docs
 
 ```bash
-cd website/docs
+# In magpie-docs
 npm run build
 ```
 

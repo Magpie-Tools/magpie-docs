@@ -22,6 +22,6 @@ Used for:
 
 ## File-based settings
 
-Global settings are read/written at `backend/data/settings.json` in local runs.
+Global settings are read/written at `data/settings.json` in local backend runs.
 
 In containerized runs, persist this path with a volume if you require file-level durability beyond the container lifecycle.
