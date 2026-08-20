@@ -42,7 +42,7 @@ Why it matters:
 ## Local clone workflow
 
 ```bash
-git clone https://github.com/Kuucheen/magpie.git
+git clone https://github.com/Magpie-Tools/magpie.git
 cd magpie
 cp .env.example .env
 # edit .env and set PROXY_ENCRYPTION_KEY and JWT_SECRET

@@ -14,7 +14,6 @@
 .env.*
 !.env.example
 **/.codex
-/.gh-pages-docs-worktree/
 .env.local
 .env.development.local
 .env.test.local

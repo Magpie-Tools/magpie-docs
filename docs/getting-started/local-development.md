@@ -19,9 +19,10 @@ workspace:
 ```bash
 mkdir magpie-workspace
 cd magpie-workspace
-git clone https://github.com/Kuucheen/magpie.git
+git clone https://github.com/Magpie-Tools/magpie.git
 git clone https://github.com/Magpie-Tools/magpie-backend.git
 git clone https://github.com/Magpie-Tools/magpie-frontend.git
+git clone https://github.com/Magpie-Tools/magpie-website.git
 git clone https://github.com/Magpie-Tools/magpie-docs.git
 ```
 

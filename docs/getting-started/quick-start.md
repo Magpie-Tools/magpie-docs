@@ -10,19 +10,19 @@
 ### macOS/Linux
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Kuucheen/magpie/refs/heads/master/scripts/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/Magpie-Tools/magpie/refs/heads/master/scripts/install.sh | bash
 ```
 
 ### Windows (PowerShell)
 
 ```powershell
-iwr -useb https://raw.githubusercontent.com/Kuucheen/magpie/refs/heads/master/scripts/install.ps1 | iex
+iwr -useb https://raw.githubusercontent.com/Magpie-Tools/magpie/refs/heads/master/scripts/install.ps1 | iex
 ```
 
 ## Manual install
 
 ```bash
-git clone https://github.com/Kuucheen/magpie.git
+git clone https://github.com/Magpie-Tools/magpie.git
 cd magpie
 cp .env.example .env
 # set PROXY_ENCRYPTION_KEY in .env

@@ -31,12 +31,17 @@ npm run deploy
 ```
 
 The deployment script publishes the generated site beneath `/docs` on the
-repository's `gh-pages` branch. The final production deployment can combine
-that directory with the output of `magpie-website`.
+distribution repository's `gh-pages` branch. Clone `magpie-docs` and `magpie`
+as siblings, or set `MAGPIE_DISTRIBUTION_REPO` to the local distribution
+repository path.
+
+Use `MAGPIE_DEPLOY_DRY_RUN=1 npm run deploy` to build and validate without
+changing `gh-pages`. Use `MAGPIE_DEPLOY_PUSH=0 npm run deploy` to create the
+Pages commit locally without pushing it.
 
 ## Related repositories
 
-- [Distribution and deployment](https://github.com/Kuucheen/magpie)
+- [Distribution and deployment](https://github.com/Magpie-Tools/magpie)
 - [Backend](https://github.com/Magpie-Tools/magpie-backend)
 - [Frontend](https://github.com/Magpie-Tools/magpie-frontend)
 - [Website](https://github.com/Magpie-Tools/magpie-website)
