@@ -12,6 +12,12 @@ Validation should cover:
 - DB row/size growth during soak
 - dropped statistics budget
 
+Run million-scale checker validation with
+`PROXY_QUEUE_ENCRYPT_CREDENTIALS=false`, which is the throughput-oriented
+default. If a deployment enables queue credential encryption, repeat the same
+test matrix with it enabled and treat the resulting checker capacity as a
+separate deployment profile.
+
 ## Test matrix
 
 | Suite | Script | Default duration | Primary focus | Gate criteria |

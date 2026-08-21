@@ -26,6 +26,7 @@ git clone https://github.com/Magpie-Tools/magpie.git
 cd magpie
 cp .env.example .env
 # set PROXY_ENCRYPTION_KEY in .env
+docker compose run --rm backend --migrate-only
 docker compose up -d
 ```
 

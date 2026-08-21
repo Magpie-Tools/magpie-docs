@@ -36,8 +36,15 @@ If omitted, Docker Compose uses built-in DB defaults. Installer scripts auto-gen
 
 Why it matters:
 
-- It encrypts stored proxy secrets (auth, passwords, and encrypted IP fields).
+- It encrypts proxy usernames and passwords in PostgreSQL.
+- It derives the keyed fingerprint used to distinguish case-sensitive proxy credentials.
+- It encrypts Redis queue credentials only when `PROXY_QUEUE_ENCRYPT_CREDENTIALS=true`.
 - Changing it later prevents old encrypted values from being decrypted.
+
+Proxy IP addresses are stored as native PostgreSQL `inet` values. Protect them
+with database access controls plus encrypted volumes and backups. Redis queue
+credentials are plaintext by default for checker throughput, so keep Redis
+private and protect its access, volumes, and backups.
 
 ## Local clone workflow
 
@@ -47,6 +54,7 @@ cd magpie
 cp .env.example .env
 # edit .env and set PROXY_ENCRYPTION_KEY and JWT_SECRET
 # optional: override DB_USERNAME/DB_PASSWORD/DB_NAME
+docker compose run --rm backend --migrate-only
 docker compose up -d
 ```
 

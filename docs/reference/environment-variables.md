@@ -2,7 +2,7 @@
 
 ## Core backend
 
-- `PROXY_ENCRYPTION_KEY`: required encryption key for stored proxy secrets.
+- `PROXY_ENCRYPTION_KEY`: required key for encrypted PostgreSQL proxy usernames and passwords and keyed route fingerprints. It also protects Redis queue credentials when optional queue encryption is enabled. It does not encrypt proxy IP addresses.
 - `JWT_SECRET`: required JWT signing key.
 - `JWT_TTL_MINUTES` (default `10080`, allowed `15..10080`): access token lifetime.
 - `LOG_LEVEL` (default `info`): backend logger level (`debug`, `info`, `warn`, `error`, `fatal`).
@@ -113,6 +113,7 @@ In multi-instance deployments, all backend instances can poll and deliver from t
 - `redisUrl`: legacy `REDIS_URL` fallback.
 - `REDIS_PASSWORD`: optional Redis password.
 - `REDIS_CONNECT_RETRY_BACKOFF_MS` (default `5000`): reconnect defer/backoff duration.
+- `PROXY_QUEUE_ENCRYPT_CREDENTIALS` (default `false`): encrypt proxy credentials in Redis queue payloads. The default keeps the million-scale checker hot path free of per-check encryption and decryption. Enabling it reduces credential exposure to Redis readers but costs checker throughput.
 
 Sentinel mode:
 
@@ -130,7 +131,7 @@ In default Docker Compose single-mode deployment, backend points to `redis://red
 - `DB_USERNAME` (default `magpie_user` in Docker Compose): PostgreSQL username.
 - `DB_PASSWORD` (default `ChangeMeToAStrongDbPassword` in Docker Compose): PostgreSQL password.
 - `DB_SSLMODE` (default `require`): PostgreSQL TLS mode (`disable`, `allow`, `prefer`, `require`, `verify-ca`, `verify-full`).
-- `DB_AUTO_MIGRATE` (default local `true`, production-oriented deployments often set `false`)
+- `DB_AUTO_MIGRATE` (default local `true`, production-oriented deployments often set `false`). When false, startup performs no schema mutation. Run the backend with `--migrate-only` as a one-off migration job.
 - `DB_MAX_OPEN_CONNS` (default `32`)
 - `DB_MAX_IDLE_CONNS` (default `DB_MAX_OPEN_CONNS`)
 - `DB_CONN_MAX_LIFETIME` seconds (default `300`)

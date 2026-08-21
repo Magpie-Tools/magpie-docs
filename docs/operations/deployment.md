@@ -5,6 +5,7 @@
 From repo root:
 
 ```bash
+docker compose run --rm backend --migrate-only
 docker compose up -d
 ```
 
@@ -27,12 +28,27 @@ Services:
 3. Set `DB_SSLMODE=require` (or `verify-ca`/`verify-full`) when using an external/production Postgres endpoint.
 4. Use persistent volumes for Postgres and backend settings if needed.
 5. Put reverse proxy/TLS in front of frontend and backend.
-6. Restrict database and redis exposure to private network.
-7. Back up Postgres regularly.
+6. Restrict PostgreSQL and Redis to private networks. Require Redis authentication and restricted ACLs; use TLS for a remote Redis service.
+7. Encrypt and regularly back up PostgreSQL and Redis. Redis queue payloads contain plaintext proxy credentials by default.
 
 Default Compose includes CPU/memory limits and reservations per service. Tune them with `*_CPU_LIMIT`, `*_MEMORY_LIMIT`, `*_CPU_RESERVATION`, and `*_MEMORY_RESERVATION` env vars.
 
 Before production rollout, run the load/soak gate documented in [Performance Validation](./performance-validation.md).
+
+## Database migrations
+
+Keep `DB_AUTO_MIGRATE=false` on production application instances. Before
+starting a new backend image, stop all backend instances and run that image once
+with `--migrate-only`.
+
+```bash
+docker compose stop backend
+docker compose run --rm backend --migrate-only
+docker compose up -d backend
+```
+
+Take coordinated PostgreSQL and Redis backups first. A failed migration leaves
+the backend stopped so it cannot run against a partially migrated schema.
 
 ## Multi-instance considerations
 
