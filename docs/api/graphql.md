@@ -62,6 +62,7 @@ query DashboardData($proxyPage: Int!) {
         anonymityLevel
         alive
         latestCheck
+        tags { id name color }
       }
     }
     proxyHistory(limit: 168) { count recordedAt }

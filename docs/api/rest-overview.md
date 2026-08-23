@@ -57,10 +57,10 @@ Proxy list endpoints support:
 - Optional `search`
 - Optional filter query params:
   - `status=alive|dead`
-  - repeated: `protocol`, `country`, `type`, `anonymity`, `reputation`
+  - repeated: `protocol`, `country`, `type`, `anonymity`, `reputation`, `tagId`
   - numeric: `maxTimeout`, `maxRetries`
 
-Scrape-source proxy lists use the same filter model plus `page`.
+Repeated tags use ANY matching. Scrape-source proxy lists use the same filter model plus `page`.
 
 ## Request size limits
 

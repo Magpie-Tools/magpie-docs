@@ -10,6 +10,10 @@ Accepted form fields:
 - `proxyTextarea`: raw text area input
 - `clipboardProxies`: pasted input
 
+Optional query parameter:
+
+- repeated `tagId`: tags to add to every imported proxy
+
 The endpoint accepts provider hostnames as `gateway.provider.example:8080`, IPv4 as `192.0.2.1:8080`, and IPv6 as `[2001:db8::1]:8080`. The same host forms support `user:pass@host:port`, `host:port@user:pass`, and `host:port:user:pass` credentials.
 
 Success (`200`):
@@ -38,6 +42,8 @@ Notes:
 - `invalidAddressCount` covers invalid DNS hostnames, IPv4 addresses, and IPv6 addresses. `invalidIpCount` is a deprecated alias with the same value.
 - `invalidIpv4Count` is retained as a deprecated compatibility field and is always `0` for manual uploads.
 - Proxy scraping remains IPv4-only and rejects hostnames.
+- Import tag assignment is additive. Existing tags remain assigned when an already-owned proxy route is imported again.
+- Every `tagId` must belong to the authenticated user. Unknown or malformed IDs reject the request.
 
 ## `GET /api/getProxyCount`
 
@@ -57,8 +63,11 @@ Query params:
 - repeated `type`
 - repeated `anonymity`
 - repeated `reputation=good|neutral|poor|unknown`
+- repeated `tagId`
 - `maxTimeout`
 - `maxRetries`
+
+Several `tagId` values use ANY matching: a proxy is included when it has at least one selected tag. The `search` parameter also matches tag names.
 
 Response:
 
@@ -75,6 +84,9 @@ Response:
       "anonymity_level": "elite",
       "alive": true,
       "latest_check": "2026-02-12T10:00:00Z",
+      "tags": [
+        {"id": 4, "name": "Residential", "color": "#22C55E"}
+      ],
       "reputation": {
         "overall": {"kind": "overall", "score": 0.89, "label": "good"}
       }
@@ -94,13 +106,70 @@ Requires auth. Returns available filter values:
 {
   "countries": ["DE", "US"],
   "types": ["datacenter", "residential"],
-  "anonymityLevels": ["elite", "anonymous", "transparent", "N/A"]
+  "anonymityLevels": ["elite", "anonymous", "transparent", "N/A"],
+  "tags": [
+    {"id": 4, "name": "Residential", "color": "#22C55E"}
+  ]
 }
 ```
 
+## Proxy tags
+
+Tags and assignments are scoped to the authenticated user. Tag names are case-insensitively unique per user, whitespace is normalized, and names may contain at most 40 characters. Colors use `#RRGGBB` notation.
+
+### `GET /api/proxyTags`
+
+Returns the user's tags ordered by name.
+
+```json
+[
+  {"id": 4, "name": "Residential", "color": "#22C55E"},
+  {"id": 9, "name": "Vendor A", "color": "#0EA5E9"}
+]
+```
+
+### `POST /api/proxyTags`
+
+Creates a tag and returns it with status `201`.
+
+```json
+{"name": "Vendor A", "color": "#0EA5E9"}
+```
+
+### `PUT /api/proxyTags/{id}`
+
+Renames and recolors one of the user's tags using the same request body as creation.
+
+### `DELETE /api/proxyTags/{id}`
+
+Deletes one of the user's tags and all of its assignments. Returns `204`; proxies are not deleted.
+
+### `PUT /api/proxies/{id}/tags`
+
+Replaces the authenticated user's complete tag selection for a proxy. An empty array removes every tag from that proxy.
+
+Request:
+
+```json
+{"tagIds": [4, 9]}
+```
+
+Response:
+
+```json
+{
+  "tags": [
+    {"id": 4, "name": "Residential", "color": "#22C55E"},
+    {"id": 9, "name": "Vendor A", "color": "#0EA5E9"}
+  ]
+}
+```
+
+Unknown tags, tags owned by another user, and proxies outside the user's pool return `404`. Duplicate names return `409`; invalid names, colors, or path IDs return `400`.
+
 ## `GET /api/proxies/{id}`
 
-Requires auth. Returns proxy detail including latest statistic and reputation breakdown.
+Requires auth. Returns proxy detail including latest statistic, reputation breakdown, and the authenticated user's `tags` array.
 
 ## `GET /api/proxies/{id}/statistics`
 
@@ -166,9 +235,12 @@ Mode B: filter object.
   "maxTimeout": 5000,
   "proxyStatus": "alive",
   "reputationLabels": ["good"],
+  "tagIds": [4, 9],
   "scope": "selected"
 }
 ```
+
+When `filter` is enabled, `tagIds` uses the same ANY matching as proxy-list filtering.
 
 Responses are JSON strings, for example:
 

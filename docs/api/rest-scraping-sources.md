@@ -66,7 +66,9 @@ Query params:
 - `pageSize`
 - `search`
 - same filter params as proxy list:
-  - `status`, `protocol`, `country`, `type`, `anonymity`, `reputation`, `maxTimeout`, `maxRetries`
+  - `status`, `protocol`, `country`, `type`, `anonymity`, `reputation`, `tagId`, `maxTimeout`, `maxRetries`
+
+Rows include the authenticated user's `tags` array. Search matches tag names, and repeated `tagId` values use ANY matching. Tags can be assigned here even though automatic scraping itself does not assign tags.
 
 ## `GET /api/scrapingSources/check?url=...`
 

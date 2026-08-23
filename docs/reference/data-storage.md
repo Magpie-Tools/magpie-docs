@@ -7,10 +7,13 @@ Primary persistent store for:
 - users and roles
 - proxies and stats
 - proxy reputation snapshots
+- user-owned proxy tags and their proxy-access assignments
 - scrape sources and relations
 - rotating proxies
 
 Default Docker setup persists Postgres data via named volume `postgres_data`.
+
+Proxy routes can be shared, while tag catalogs and assignments are scoped to a user and their `user_proxies` access record. Tags are not copied into Redis queue payloads and do not add work to the steady-state checker loop.
 
 ## Redis
 

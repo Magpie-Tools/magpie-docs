@@ -8,6 +8,8 @@
 - `proxyTextarea`
 - `clipboardProxies`
 
+Before importing, you can select any number of tags. The chosen tags are added to every imported proxy. If you already own one of the submitted proxy routes, its existing tags stay in place and the selected import tags are added to them.
+
 Accepted formats include:
 
 - Provider hostname: `gateway.provider.example:8080`
@@ -33,10 +35,25 @@ Filter/query parameters include:
 - `search`
 - `pageSize`
 - `status=alive|dead`
-- repeated: `protocol`, `country`, `type`, `anonymity`, `reputation`
+- repeated: `protocol`, `country`, `type`, `anonymity`, `reputation`, `tagId`
 - `maxTimeout`, `maxRetries`
 
-Search accepts complete or partial provider hostnames as well as IPv4, IPv6, and CIDR terms.
+Selecting several tags matches proxies that have any selected tag. Search accepts tag names, complete or partial provider hostnames, IPv4, IPv6, and CIDR terms.
+
+The proxy list uses a two-row dashboard toolbar: list actions, refresh, filters, and column controls are grouped above a full-width search field. The Tags column is always available so tags can be changed without leaving the list.
+
+## Organize proxies with tags
+
+A tag has a name and a color. Tags belong to your account, so another user who has access to the same proxy route cannot see or change your tags. Names are unique within your account without regard to capitalization, may contain up to 40 characters, and a proxy can have any number of tags.
+
+Use **Manage tags** from the proxy list, proxy detail, scrape-source proxy list, or import dialog to create, rename, recolor, and delete tags. You can assign several tags:
+
+- inline from any row in the main proxy list
+- inline from a scrape source's proxy list
+- from an individual proxy's detail page
+- to every proxy in an import
+
+Deleting a tag removes that tag from every proxy without deleting the proxies themselves.
 
 ## Proxy detail and stats
 
@@ -49,7 +66,7 @@ Search accepts complete or partial provider hostnames as well as IPv4, IPv6, and
 `DELETE /api/proxies` supports two body formats:
 
 1. JSON array of IDs: `[1,2,3]`
-2. Filter settings object (`scope`, protocol filters, timeout/retries, reputation labels)
+2. Filter settings object (`scope`, protocol filters, timeout/retries, reputation labels, tag IDs)
 
 ## Export proxies
 

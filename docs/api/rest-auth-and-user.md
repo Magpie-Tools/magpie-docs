@@ -253,9 +253,12 @@ Request:
   "maxTimeout": 5000,
   "proxyStatus": "alive",
   "reputationLabels": ["good", "neutral"],
+  "tagIds": [4, 9],
   "outputFormat": "ip:port"
 }
 ```
+
+When filtering is enabled, `tagIds` matches proxies that have any selected tag.
 
 Response:
 
