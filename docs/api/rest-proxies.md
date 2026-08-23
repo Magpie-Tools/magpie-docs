@@ -10,7 +10,7 @@ Accepted form fields:
 - `proxyTextarea`: raw text area input
 - `clipboardProxies`: pasted input
 
-The endpoint accepts IPv4 as `192.0.2.1:8080` and IPv6 as `[2001:db8::1]:8080`. The same address forms support `user:pass@host:port`, `host:port@user:pass`, and `host:port:user:pass` credentials.
+The endpoint accepts provider hostnames as `gateway.provider.example:8080`, IPv4 as `192.0.2.1:8080`, and IPv6 as `[2001:db8::1]:8080`. The same host forms support `user:pass@host:port`, `host:port@user:pass`, and `host:port:user:pass` credentials.
 
 Success (`200`):
 
@@ -21,6 +21,7 @@ Success (`200`):
     "submittedCount": 100,
     "parsedCount": 70,
     "invalidFormatCount": 20,
+    "invalidAddressCount": 5,
     "invalidIpCount": 5,
     "invalidIpv4Count": 0,
     "invalidPortCount": 3,
@@ -34,8 +35,9 @@ Notes:
 
 - Oversized uploads return `413`.
 - If no upload input is provided, returns `400`.
-- `invalidIpv4Count` is retained as a deprecated compatibility field and is always `0` for manual uploads. `invalidIpCount` covers invalid IPv4 and IPv6 literals.
-- Proxy scraping remains IPv4-only.
+- `invalidAddressCount` covers invalid DNS hostnames, IPv4 addresses, and IPv6 addresses. `invalidIpCount` is a deprecated alias with the same value.
+- `invalidIpv4Count` is retained as a deprecated compatibility field and is always `0` for manual uploads.
+- Proxy scraping remains IPv4-only and rejects hostnames.
 
 ## `GET /api/getProxyCount`
 
@@ -65,11 +67,11 @@ Response:
   "proxies": [
     {
       "id": 1,
-      "ip": "2001:db8::42",
+      "ip": "gateway.provider.example",
       "port": 8080,
-      "estimated_type": "datacenter",
+      "estimated_type": "N/A",
       "response_time": 280,
-      "country": "US",
+      "country": "N/A",
       "anonymity_level": "elite",
       "alive": true,
       "latest_check": "2026-02-12T10:00:00Z",
@@ -81,6 +83,8 @@ Response:
   "total": 1234
 }
 ```
+
+The `ip` response property keeps its existing name for API compatibility. Its value is the canonical route host, which may be a DNS hostname, IPv4 address, or IPv6 address. Country, estimated type, AbuseIPDB data, and IP blacklist matching are unavailable for hostname routes because Magpie does not resolve changing gateway answers into stored identity data.
 
 ## `GET /api/proxyFilters`
 

@@ -8,7 +8,7 @@
 
 ## Proxy storage
 
-- PostgreSQL and Redis store proxy IP addresses and ports in queryable form. A service reader can see them.
+- PostgreSQL and Redis store proxy hosts and ports in queryable form. PostgreSQL also keeps a native `inet` projection for literal IP routes. A service reader can see these values.
 - PostgreSQL stores proxy usernames and passwords as authenticated ciphertext on each user's proxy access row.
 - Redis queue payloads store proxy credentials in plaintext by default so the checker does not perform cryptography for every check. Treat Redis as trusted runtime infrastructure.
 - `PROXY_QUEUE_ENCRYPT_CREDENTIALS=true` enables application-level queue credential encryption when its per-check cost is acceptable.

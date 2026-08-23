@@ -18,6 +18,10 @@ HTTP, HTTPS, SOCKS4, and SOCKS5 for proxy protocol. Listener transport supports 
 
 Yes for manual import, storage, checking, filtering, blacklists, export, and rotating proxies. Use `[2001:db8::1]:8080` when an IPv6 address includes a port. Proxy scraping is still IPv4-only.
 
+## Are proxy provider hostnames supported?
+
+Yes. Manual imports accept entries such as `gateway.provider.example:8080`, including the same credential forms as IP routes. The hostname remains the route identity when DNS answers change. Checking, search, export, and rotating proxies support it. IP blacklists, GeoLite, and AbuseIPDB do not resolve hostname routes, and scraping remains IPv4-only.
+
 ## Does Magpie support both REST and GraphQL?
 
 Yes. REST endpoints are under `/api/*` and GraphQL is at `/api/graphql`.
@@ -26,12 +30,13 @@ Yes. REST endpoints are under `/api/*` and GraphQL is at `/api/graphql`.
 
 Previously encrypted proxy secrets cannot be decrypted. Store this key securely and keep backups.
 
-## Are proxy IP addresses encrypted in PostgreSQL?
+## Are proxy hosts encrypted in PostgreSQL?
 
-No. PostgreSQL stores proxy IP addresses as native `inet` values so Magpie can
-sort them and run subnet and blacklist range queries. Proxy usernames and
-passwords use application-level encryption. Protect IP addresses through
-database access controls, private networking, and encrypted storage and backups.
+No. PostgreSQL stores the canonical proxy host in plaintext and keeps a native
+`inet` projection for literal IP routes so Magpie can run subnet and blacklist
+range queries. Proxy usernames and passwords use application-level encryption.
+Protect proxy hosts through database access controls, private networking, and
+encrypted storage and backups.
 
 ## Are proxy credentials encrypted in Redis?
 

@@ -8,7 +8,7 @@
 4. Optional backend settings file persistence if mounted separately
 
 Encrypt PostgreSQL and Redis volume snapshots and every exported backup. Proxy
-IP addresses remain visible in PostgreSQL backups. Redis backups also contain
+hosts remain visible in PostgreSQL backups. Redis backups also contain
 plaintext proxy credentials by default; PostgreSQL proxy credentials remain
 encrypted by the application.
 

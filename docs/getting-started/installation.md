@@ -41,10 +41,11 @@ Why it matters:
 - It encrypts Redis queue credentials only when `PROXY_QUEUE_ENCRYPT_CREDENTIALS=true`.
 - Changing it later prevents old encrypted values from being decrypted.
 
-Proxy IP addresses are stored as native PostgreSQL `inet` values. Protect them
-with database access controls plus encrypted volumes and backups. Redis queue
-credentials are plaintext by default for checker throughput, so keep Redis
-private and protect its access, volumes, and backups.
+Proxy hosts are stored in plaintext, with a native PostgreSQL `inet` projection
+for literal IP routes. Protect them with database access controls plus encrypted
+volumes and backups. Redis queue credentials are plaintext by default for
+checker throughput, so keep Redis private and protect its access, volumes, and
+backups.
 
 ## Local clone workflow
 

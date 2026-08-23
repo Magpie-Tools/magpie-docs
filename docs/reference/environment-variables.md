@@ -2,7 +2,7 @@
 
 ## Core backend
 
-- `PROXY_ENCRYPTION_KEY`: required key for encrypted PostgreSQL proxy usernames and passwords and keyed route fingerprints. It also protects Redis queue credentials when optional queue encryption is enabled. It does not encrypt proxy IP addresses.
+- `PROXY_ENCRYPTION_KEY`: required key for encrypted PostgreSQL proxy usernames and passwords and keyed route fingerprints. It also protects Redis queue credentials when optional queue encryption is enabled. It does not encrypt proxy hosts.
 - `JWT_SECRET`: required JWT signing key.
 - `JWT_TTL_MINUTES` (default `10080`, allowed `15..10080`): access token lifetime.
 - `LOG_LEVEL` (default `info`): backend logger level (`debug`, `info`, `warn`, `error`, `fatal`).

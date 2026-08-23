@@ -16,7 +16,7 @@ Admin APIs allow editing global runtime configuration.
 - GeoLite updater config
 - blacklist sources and website blacklist
 
-Proxy blacklist sources may contain individual IPv4 or IPv6 addresses and CIDR ranges for either family.
+Proxy blacklist sources may contain individual IPv4 or IPv6 addresses and CIDR ranges for either family. These lists apply only to literal IP proxy routes. Magpie does not resolve provider hostnames for blacklist matching because their DNS answers may change.
 
 ## Website blacklist effects
 

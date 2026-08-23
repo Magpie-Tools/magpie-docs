@@ -116,7 +116,7 @@ Response:
 ```json
 {
   "proxy_id": 12345,
-  "ip": "2001:db8::25",
+  "ip": "gateway.provider.example",
   "port": 8080,
   "username": "u",
   "password": "p",
@@ -125,4 +125,4 @@ Response:
 }
 ```
 
-Clients must combine an IPv6 `ip` and `port` as `[ip]:port`.
+The `ip` property may contain a provider hostname despite its compatibility name. Clients must combine an IPv6 value and port as `[ip]:port`; hostnames use `hostname:port`.
