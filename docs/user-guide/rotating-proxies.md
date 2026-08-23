@@ -36,3 +36,4 @@ Rotating proxies let you expose stable listener endpoints while Magpie rotates u
 - Listener protocol defaults to upstream protocol
 - Transport supports `tcp`, `quic`, and `http3`
 - SOCKS listeners require TCP transport
+- Upstream proxies can use IPv4 or IPv6 addresses. IPv6 listener and upstream endpoints use bracketed `host:port` notation.

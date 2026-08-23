@@ -14,6 +14,10 @@ Production-oriented deployments may disable public registration and require a co
 
 HTTP, HTTPS, SOCKS4, and SOCKS5 for proxy protocol. Listener transport supports TCP, QUIC, and HTTP/3 where applicable.
 
+## Are IPv6 proxies supported?
+
+Yes for manual import, storage, checking, filtering, blacklists, export, and rotating proxies. Use `[2001:db8::1]:8080` when an IPv6 address includes a port. Proxy scraping is still IPv4-only.
+
 ## Does Magpie support both REST and GraphQL?
 
 Yes. REST endpoints are under `/api/*` and GraphQL is at `/api/graphql`.

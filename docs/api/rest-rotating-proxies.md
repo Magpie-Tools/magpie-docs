@@ -26,8 +26,8 @@ Response:
       "alive_proxy_count": 340,
       "listen_port": 20042,
       "auth_required": false,
-      "listen_host": "203.0.113.10",
-      "listen_address": "203.0.113.10:20042",
+      "listen_host": "2001:db8::10",
+      "listen_address": "[2001:db8::10]:20042",
       "reputation_labels": ["good", "neutral"],
       "created_at": "2026-02-12T10:00:00Z"
     }
@@ -116,7 +116,7 @@ Response:
 ```json
 {
   "proxy_id": 12345,
-  "ip": "198.51.100.25",
+  "ip": "2001:db8::25",
   "port": 8080,
   "username": "u",
   "password": "p",
@@ -124,3 +124,5 @@ Response:
   "protocol": "http"
 }
 ```
+
+Clients must combine an IPv6 `ip` and `port` as `[ip]:port`.

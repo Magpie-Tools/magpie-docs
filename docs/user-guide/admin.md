@@ -16,6 +16,8 @@ Admin APIs allow editing global runtime configuration.
 - GeoLite updater config
 - blacklist sources and website blacklist
 
+Proxy blacklist sources may contain individual IPv4 or IPv6 addresses and CIDR ranges for either family.
+
 ## Website blacklist effects
 
 Updating website blacklist can:

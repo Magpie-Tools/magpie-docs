@@ -10,6 +10,8 @@ Accepted form fields:
 - `proxyTextarea`: raw text area input
 - `clipboardProxies`: pasted input
 
+The endpoint accepts IPv4 as `192.0.2.1:8080` and IPv6 as `[2001:db8::1]:8080`. The same address forms support `user:pass@host:port`, `host:port@user:pass`, and `host:port:user:pass` credentials.
+
 Success (`200`):
 
 ```json
@@ -20,7 +22,7 @@ Success (`200`):
     "parsedCount": 70,
     "invalidFormatCount": 20,
     "invalidIpCount": 5,
-    "invalidIpv4Count": 2,
+    "invalidIpv4Count": 0,
     "invalidPortCount": 3,
     "blacklistedCount": 28,
     "processingMs": 17
@@ -32,6 +34,8 @@ Notes:
 
 - Oversized uploads return `413`.
 - If no upload input is provided, returns `400`.
+- `invalidIpv4Count` is retained as a deprecated compatibility field and is always `0` for manual uploads. `invalidIpCount` covers invalid IPv4 and IPv6 literals.
+- Proxy scraping remains IPv4-only.
 
 ## `GET /api/getProxyCount`
 
@@ -61,7 +65,7 @@ Response:
   "proxies": [
     {
       "id": 1,
-      "ip": "1.2.3.4",
+      "ip": "2001:db8::42",
       "port": 8080,
       "estimated_type": "datacenter",
       "response_time": 280,

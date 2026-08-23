@@ -10,11 +10,14 @@
 
 Accepted formats include:
 
-- `ip:port`
-- `ip:port:user:pass`
-- `user:pass@ip:port`
+- IPv4: `192.0.2.1:8080`
+- IPv6: `[2001:db8::1]:8080`
+- Colon-delimited credentials: `host:port:user:pass`
+- Prefix credentials: `user:pass@host:port`
+- Suffix credentials: `host:port@user:pass`
 
 Invalid entries are counted and returned in response statistics.
+IPv6 literals must use brackets when a port is present. Proxy scraping remains IPv4-only.
 
 ## Browse and filter
 
@@ -68,3 +71,5 @@ Example format:
 ```text
 protocol ip:port username password country alive type time reputation_score reputation_label
 ```
+
+The `ip:port` placeholder pair brackets IPv6 addresses in exported endpoints, for example `[2001:db8::1]:8080`.
