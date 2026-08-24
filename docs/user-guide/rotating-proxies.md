@@ -26,7 +26,7 @@ Rotating proxies let you expose stable listener endpoints while Magpie rotates u
 ## Validation behavior
 
 - `name` is required and max length is 120
-- `protocol` must be enabled for the user
+- `protocol` must be enabled for the active workspace
 - `auth_required=true` requires both username and password
 - listener ports are allocated from configured rotating port range
 
@@ -37,3 +37,4 @@ Rotating proxies let you expose stable listener endpoints while Magpie rotates u
 - Transport supports `tcp`, `quic`, and `http3`
 - SOCKS listeners require TCP transport
 - Upstream proxies can use provider hostnames, IPv4, or IPv6. IPv6 listener and upstream endpoints use bracketed `host:port` notation. Provider hostnames use normal `host:port` notation and resolve when the rotator connects.
+- Only active managed proxies in the rotator's workspace are eligible upstreams.

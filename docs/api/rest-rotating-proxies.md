@@ -4,7 +4,7 @@ Rotating proxies expose stable listener ports and rotate through alive upstream 
 
 ## `GET /api/rotatingProxies`
 
-Requires auth.
+Requires viewer or higher. Lists rotators owned by the selected workspace.
 
 Response:
 
@@ -37,7 +37,7 @@ Response:
 
 ## `POST /api/rotatingProxies`
 
-Requires auth.
+Requires operator or higher in the selected workspace.
 
 Request:
 
@@ -60,9 +60,9 @@ Request:
 
 Validation and behavior:
 
-- `name` required, max length 120, unique per user.
+- `name` required, max length 120, unique per workspace.
 - `instance_id` required and must be one of the currently available instances with free listener ports.
-- `protocol` required and must be enabled in the user's protocol settings.
+- `protocol` required and must be enabled in the workspace's protocol settings.
 - `auth_required=true` requires non-empty `auth_username` and `auth_password`.
 - `reputation_labels` supports `good`, `neutral`, `poor`.
 - Optional uptime filter requires a valid pair:
@@ -80,7 +80,7 @@ Status mapping:
 
 ## `GET /api/rotatingProxies/instances`
 
-Requires auth. Returns only instances that currently have free rotator listener ports.
+Requires viewer or higher. Returns only instances that currently have free rotator listener ports.
 
 Response:
 
@@ -103,13 +103,14 @@ Response:
 
 ## `DELETE /api/rotatingProxies/{id}`
 
-Requires auth.
+Requires operator or higher in the selected workspace.
 
 - Success: `204 No Content`
 
 ## `POST /api/rotatingProxies/{id}/next`
 
-Requires auth. Returns the next upstream proxy that will be served.
+Requires viewer or higher. Returns the next active managed proxy that will be
+served from the selected workspace.
 
 Response:
 

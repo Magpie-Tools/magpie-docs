@@ -13,6 +13,7 @@
   - at least one number
   - no whitespace
 - first user gets admin role
+- creates a personal workspace with the account as owner and billing administrator
 
 ## Login
 
@@ -61,4 +62,9 @@
 `POST /api/deleteAccount`
 
 - requires current password
-- removes user relationships and orphaned resources where applicable
+- is blocked while the account is the sole owner of a shared workspace
+- removes the account's solitary personal workspace
+- revokes memberships in other workspaces without changing their capacity or resources
+
+Global account roles and workspace roles are separate. Instance administrator
+status does not grant access to a workspace; membership does.

@@ -30,6 +30,8 @@ Authorization: Bearer <token>
 
 Additional headers used by specific endpoints:
 
+- `X-Workspace-ID`: selects the workspace for resource endpoints; omitting it
+  uses the authenticated account's default membership.
 - `X-Observability-Token`: optional token for `/healthz`, `/readyz`, `/metrics` when public observability is disabled.
 
 ## Data formats
@@ -41,6 +43,7 @@ Additional headers used by specific endpoints:
 ## Endpoint groups
 
 - Auth and user: register/login/token lifecycle, password/account, user settings
+- Workspaces: selection, capacity, subscription entitlement, members, and roles
 - Proxies: upload, list/filter, detail/stats, delete, export
 - Rotating proxies: create/list/delete/manual rotate + instance discovery
 - Scraping sources: upload/list/detail/delete/robots checks
@@ -83,7 +86,7 @@ Common status codes:
 - `401 Unauthorized`: missing/invalid token
 - `403 Forbidden`: authenticated but missing required permission
 - `404 Not Found`: resource not found
-- `409 Conflict`: duplicate/conflicting state
+- `409 Conflict`: duplicate/conflicting state or an active-route capacity limit prevents activation
 - `413 Request Entity Too Large`: request/query too large
 - `429 Too Many Requests`: auth rate limits exceeded (includes `Retry-After`)
 - `500 Internal Server Error`: unexpected server error

@@ -26,8 +26,28 @@ If the header is missing, malformed, or invalid, protected endpoints return `401
 
 - `RequireAuth`: endpoint requires a valid JWT.
 - `IsAdmin`: endpoint requires a valid JWT and `role=admin`.
+- `withWorkspaceViewer`: endpoint also requires a workspace membership with
+  viewer or higher.
+- `withWorkspaceOperator`: endpoint also requires a workspace membership with
+  operator or higher.
 - Auth checks are applied to REST routes in
   `internal/app/server/routes.go` in `magpie-backend`.
+
+The JWT's `role` claim is the global instance role and is distinct from a
+workspace role. Global administrator status does not grant access to a
+workspace. Access is resolved from membership on each workspace-scoped request.
+
+## Workspace header
+
+Select the workspace for a protected resource request with:
+
+```http
+X-Workspace-ID: 42
+```
+
+Omitting the header selects the account's default membership. The header does
+not grant access: the authenticated account must still be a member. See
+[REST: Workspaces](./rest-workspaces.md).
 
 ## Revocation behavior
 
@@ -49,6 +69,7 @@ If the header is missing, malformed, or invalid, protected endpoints return `401
 
 - GraphQL endpoint: `POST /api/graphql`
 - Uses the same bearer token header.
+- Uses the same workspace selection and viewer-membership requirement.
 - If token is missing/invalid, endpoint returns `401 Unauthorized`.
 
 ## Quick verification endpoint

@@ -9,7 +9,7 @@
 ## Proxy storage
 
 - PostgreSQL and Redis store proxy hosts and ports in queryable form. PostgreSQL also keeps a native `inet` projection for literal IP routes. A service reader can see these values.
-- PostgreSQL stores proxy usernames and passwords as authenticated ciphertext on each user's proxy access row.
+- PostgreSQL stores proxy usernames and passwords as authenticated ciphertext on each workspace's managed-proxy row.
 - Redis queue payloads store proxy credentials in plaintext by default so the checker does not perform cryptography for every check. Treat Redis as trusted runtime infrastructure.
 - `PROXY_QUEUE_ENCRYPT_CREDENTIALS=true` enables application-level queue credential encryption when its per-check cost is acceptable.
 - Encrypt PostgreSQL and Redis volumes and backups, restrict their runtime roles, and keep both services on private networks.
@@ -18,6 +18,9 @@
 
 - Protected endpoints use JWT bearer auth.
 - Admin-only routes require `role=admin`.
+- Workspace-scoped routes also resolve a membership from `X-Workspace-ID` or
+  the account's default membership. Global administrator status does not imply
+  workspace membership.
 - Restrict account creation in production:
   - `DISABLE_PUBLIC_REGISTRATION=true`
   - enable `ENABLE_PUBLIC_FIRST_ADMIN_BOOTSTRAP=true` only during controlled bootstrap windows

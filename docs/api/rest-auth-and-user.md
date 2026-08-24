@@ -26,6 +26,8 @@ Behavior:
 - First user in DB becomes `admin`; later users become `user`.
 - Registration policy can be restricted by env flags (`DISABLE_PUBLIC_REGISTRATION`, `ENABLE_PUBLIC_FIRST_ADMIN_BOOTSTRAP`).
 - Route is rate-limited (`429` + `Retry-After`).
+- Creates a personal workspace, owner membership, entitlement, member
+  preferences, default judges, and default scrape sources.
 
 Success (`201`):
 
@@ -187,9 +189,15 @@ Request:
 
 Success returns a JSON string body: `"Account deleted successfully"`.
 
+The request is rejected with `409` while the account is the sole owner of a
+shared workspace. Transfer ownership first. Deleting an account removes its
+solitary personal workspace and revokes its other memberships; it never removes
+resources or capacity from shared workspaces.
+
 ## `GET /api/user/settings`
 
-Requires auth. Returns user checker/scraper settings.
+Requires viewer or higher in the selected workspace. Returns workspace
+checker/scraper settings plus the authenticated member's column preferences.
 
 Response shape:
 
@@ -215,7 +223,9 @@ Response shape:
 
 ## `POST /api/user/settings`
 
-Requires auth. Saves user protocol/checker settings and judges.
+Requires operator or higher in the selected workspace. Saves workspace
+protocol/checker settings and judges. Column preferences are stored for the
+authenticated user in that workspace.
 
 Request uses the same fields as `GET /api/user/settings`.
 
@@ -228,6 +238,8 @@ Success (`200`):
 Current implementation note:
 
 - `scraping_sources` may be accepted in this payload but scrape-source persistence is managed by `POST /api/scrapingSources` and `DELETE /api/scrapingSources`.
+- `/api/workspace/settings` is the preferred alias. `/api/user/settings`
+  remains available for client compatibility; both are workspace-scoped.
 
 ## `GET /api/user/role`
 
@@ -237,7 +249,8 @@ Response body is a JSON string: `"admin"` or `"user"`.
 
 ## `POST /api/user/export`
 
-Requires auth. Exports proxies by selected IDs and/or filters.
+Requires viewer or higher. Exports managed proxies from the selected workspace
+by selected IDs and/or filters.
 
 Request:
 

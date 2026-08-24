@@ -22,8 +22,53 @@ At startup, backend:
 
 - REST endpoints mounted under `/api`
 - GraphQL endpoint mounted at `/api/graphql`
+- authenticated resource requests resolve a workspace membership from
+  `X-Workspace-ID`, or from the account's default workspace when omitted
+
+## Ownership model
+
+The ownership path is deliberately singular:
+
+```text
+User account
+  └─ Workspace membership
+       └─ Workspace
+          ├─ Managed proxy routes
+          ├─ Tags, judges, sources, and rotators
+          ├─ Members and roles
+          ├─ Subscription
+          └─ Capacity and usage
+```
+
+Accounts retain login identity, password, global instance role, and
+user-per-workspace display preferences. Operational resources and settings
+belong to a workspace. A member leaving changes authorization only; it does
+not remove resources or reduce capacity.
+
+`Organization` is reserved for a future consolidated-billing and SSO parent
+of multiple workspaces. `Team` is reserved for a future permission group
+inside a workspace. Neither is part of the current ownership path.
 
 ## Storage model
 
-- PostgreSQL stores users, proxies, statistics, reputations, sites, rotators
+- PostgreSQL stores accounts, memberships, workspaces, managed proxies,
+  lifecycle state, entitlements, usage periods, statistics, reputations,
+  sources, and rotators
 - Redis provides queue/coordinator features used by runtime routines
+
+The global proxy-route row represents a host, port, and credential identity.
+The workspace association is a managed proxy and holds encrypted credentials,
+lifecycle and failure state, and tag relationships. Redis queue payloads carry
+the active workspace IDs already needed by checker fan-out. Check-attempt usage
+is aggregated when the existing asynchronous statistics batch is flushed, so
+workspace metering does not add a database query to each proxy check.
+
+Rotator request and payload-byte usage follows the same performance principle:
+listeners increment in-memory monthly counters and a background routine writes
+aggregate deltas. HTTP requests and established CONNECT/SOCKS tunnels count as
+managed requests; bytes count request/response or bidirectional tunnel payload,
+excluding protocol headers.
+
+See the backend decision record
+`docs/adr/0005-make-workspaces-the-ownership-and-capacity-boundary.md` for the
+trade-offs.

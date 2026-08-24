@@ -29,7 +29,7 @@ Success (`200`):
 
 Side effects when config changes:
 
-- Website blacklist cleanup across user judges/sources
+- Website blacklist cleanup across workspace judges/sources
 - Queue cleanup for removed scrape sources
 - GeoLite update job trigger when API key is set
 - Blacklist refresh trigger when new blacklist source URLs are added
@@ -40,7 +40,7 @@ Requires admin role. Returns full current global config.
 
 ## `GET /api/getDashboardInfo`
 
-Requires auth. Returns dashboard metrics used by the UI.
+Requires viewer or higher. Returns dashboard metrics for the selected workspace.
 
 Includes totals, weekly totals, reputation/country breakdowns, judge success aggregates, and optional `top_reputation_proxy`.
 

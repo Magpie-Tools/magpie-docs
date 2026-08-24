@@ -48,3 +48,24 @@ docker compose up -d
 Keep every backend instance stopped until the migration finishes. The proxy
 storage migration removes columns used by older backend images, so rollback
 requires the matching PostgreSQL and Redis backups.
+
+### Workspace ownership migration
+
+The workspace release performs an ownership-boundary migration:
+
+- creates one personal workspace, owner membership, entitlement, and preference
+  row for every existing account;
+- copies each account's operational settings into that workspace;
+- moves managed proxies, tags, assignments, judges, scrape sources, rotators,
+  histories, and snapshots from `user_id` ownership to `workspace_id` ownership;
+- keeps existing managed proxies active initially; and
+- repairs PostgreSQL foreign keys to reference `workspaces`.
+
+The migration deliberately uses the legacy account ID as the personal
+workspace ID where possible, but clients must discover workspaces through
+`GET /api/workspaces` instead of relying on that detail. Existing API clients
+that omit `X-Workspace-ID` continue through the migrated default workspace.
+
+Do not run an older backend against the migrated database. There is no in-place
+downgrade because ownership columns and constraints have changed; restore the
+coordinated PostgreSQL and Redis backups to roll back.

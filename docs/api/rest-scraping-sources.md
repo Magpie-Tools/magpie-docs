@@ -2,15 +2,15 @@
 
 ## `GET /api/getScrapingSourcesCount`
 
-Requires auth. Returns source count for the current user.
+Requires viewer or higher. Returns source count for the selected workspace.
 
 ## `GET /api/getScrapingSourcesPage/{page}`
 
-Requires auth. Returns paged source summaries.
+Requires viewer or higher. Returns paged source summaries for the selected workspace.
 
 ## `POST /api/scrapingSources`
 
-Requires auth. Uploads sources from multipart form data.
+Requires operator or higher. Uploads sources for the selected workspace from multipart form data.
 
 Accepted form fields:
 
@@ -42,7 +42,7 @@ Notes:
 
 ## `DELETE /api/scrapingSources`
 
-Requires auth.
+Requires operator or higher in the selected workspace.
 
 Request body is an array of scrape source IDs:
 
@@ -54,11 +54,12 @@ Response is a JSON string, for example: `"Deleted 3 scraping sources."`.
 
 ## `GET /api/scrapingSources/{id}`
 
-Requires auth. Returns detailed source stats.
+Requires viewer or higher. Returns detailed source stats for the selected workspace.
 
 ## `GET /api/scrapingSources/{id}/proxies`
 
-Requires auth. Returns paged proxies associated with a source.
+Requires viewer or higher. Returns the selected workspace's paged managed
+proxies associated with a source.
 
 Query params:
 
@@ -68,11 +69,13 @@ Query params:
 - same filter params as proxy list:
   - `status`, `protocol`, `country`, `type`, `anonymity`, `reputation`, `tagId`, `maxTimeout`, `maxRetries`
 
-Rows include the authenticated user's `tags` array. Search matches tag names, and repeated `tagId` values use ANY matching. Tags can be assigned here even though automatic scraping itself does not assign tags.
+Rows include the selected workspace's `tags` array. Search matches tag names,
+and repeated `tagId` values use ANY matching. Operators can assign tags here
+even though automatic scraping itself does not assign tags.
 
 ## `GET /api/scrapingSources/check?url=...`
 
-Requires auth. Checks `robots.txt` allowance.
+Requires viewer or higher. Checks `robots.txt` allowance.
 
 Response:
 
@@ -86,7 +89,7 @@ Response:
 
 ## `GET /api/scrapingSources/respectRobots`
 
-Requires auth.
+Requires viewer or higher.
 
 Response:
 

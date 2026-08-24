@@ -9,8 +9,9 @@ The Angular app routes map to these core views:
 - `/rotating`: rotating proxy management
 - `/scraper`: scrape source list
 - `/scraper/:id`: scrape source details and related proxies
-- `/checker/settings`: per-user checker settings
-- `/checker/judges`: per-user judge settings
+- `/checker/settings`: active workspace checker settings
+- `/checker/judges`: active workspace judge settings
+- `/workspace`: workspace capacity, subscription entitlement, and members
 - `/account`: account and password actions
 - `/notifications`: release/build notifications
 

@@ -20,6 +20,7 @@ const sidebars: SidebarsConfig = {
       items: [
         'user-guide/navigation',
         'user-guide/dashboard',
+        'user-guide/workspaces',
         'user-guide/proxies',
         'user-guide/rotating-proxies',
         'user-guide/scraping-sources',
@@ -46,6 +47,7 @@ const sidebars: SidebarsConfig = {
         'api/authentication',
         'api/rest-overview',
         'api/rest-auth-and-user',
+        'api/rest-workspaces',
         'api/rest-proxies',
         'api/rest-rotating-proxies',
         'api/rest-scraping-sources',

@@ -102,11 +102,24 @@ Possible guard violations:
 
 Possible causes:
 
-- protocol not enabled for user
-- name conflict
+- protocol not enabled for the selected workspace
+- name conflict within the selected workspace
 - missing auth fields when auth required
 - no free listener ports in configured range
 - selected instance unavailable or out of ports
+
+## Workspace request returns `403`
+
+Check that the account is a member of the `X-Workspace-ID` value and has the
+role required by the endpoint. Global instance administrator status does not
+grant workspace access. Omit the header to test the account's default
+membership, or select a valid workspace in the top bar.
+
+## Proxy activation returns `409`
+
+The selected workspace has reached its finite active-route capacity. Pause or
+archive another managed proxy before activating this one. The blocked proxy
+remains stored.
 
 ## Scrape source rejected
 

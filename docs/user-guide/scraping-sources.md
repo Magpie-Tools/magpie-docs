@@ -21,9 +21,14 @@ Scrape sources are websites Magpie crawls to discover proxies.
 
 ## Organize scraped proxies
 
-Open a source to see its related proxies. The table shows your proxy tags and lets you change them inline, search by tag name, and filter by one or more tags. Selecting several tags matches proxies with any selected tag.
+Open a source to see its related proxies. The table shows the active workspace's
+proxy tags and lets operators change them inline, search by tag name, and filter
+by one or more tags. Selecting several tags matches proxies with any selected
+tag.
 
-Tags belong to your proxy access, not to the scrape source. Automatic scraping does not assign tags, and changing a tag from this table also changes what you see in the main proxy list and proxy detail.
+Tags belong to the workspace's managed proxy, not to the scrape source.
+Automatic scraping does not assign tags, and changing a tag from this table also
+changes what every member sees in the main proxy list and proxy detail.
 
 ## Robots check
 

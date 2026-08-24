@@ -14,6 +14,9 @@ Optional query parameter:
 
 - repeated `tagId`: tags to add to every imported proxy
 
+Requires operator or higher in the selected workspace. The workspace is
+selected with `X-Workspace-ID`, or the account's default when omitted.
+
 The endpoint accepts provider hostnames as `gateway.provider.example:8080`, IPv4 as `192.0.2.1:8080`, and IPv6 as `[2001:db8::1]:8080`. The same host forms support `user:pass@host:port`, `host:port@user:pass`, and `host:port:user:pass` credentials.
 
 Success (`200`):
@@ -42,12 +45,13 @@ Notes:
 - `invalidAddressCount` covers invalid DNS hostnames, IPv4 addresses, and IPv6 addresses. `invalidIpCount` is a deprecated alias with the same value.
 - `invalidIpv4Count` is retained as a deprecated compatibility field and is always `0` for manual uploads.
 - Proxy scraping remains IPv4-only and rejects hostnames.
-- Import tag assignment is additive. Existing tags remain assigned when an already-owned proxy route is imported again.
-- Every `tagId` must belong to the authenticated user. Unknown or malformed IDs reject the request.
+- Import tag assignment is additive. Existing workspace tags remain assigned when an already-managed proxy route is imported again.
+- Routes beyond a finite active capacity are stored as paused rather than discarded.
+- Every `tagId` must belong to the selected workspace. Unknown or malformed IDs reject the request.
 
 ## `GET /api/getProxyCount`
 
-Requires auth. Returns total proxy count for the user.
+Requires viewer or higher. Returns the selected workspace's managed-proxy count.
 
 ## `GET /api/getProxyPage/{page}`
 
@@ -84,6 +88,7 @@ Response:
       "anonymity_level": "elite",
       "alive": true,
       "latest_check": "2026-02-12T10:00:00Z",
+      "state": "active",
       "tags": [
         {"id": 4, "name": "Residential", "color": "#22C55E"}
       ],
@@ -115,11 +120,14 @@ Requires auth. Returns available filter values:
 
 ## Proxy tags
 
-Tags and assignments are scoped to the authenticated user. Tag names are case-insensitively unique per user, whitespace is normalized, and names may contain at most 40 characters. Colors use `#RRGGBB` notation.
+Tags and assignments are scoped to the selected workspace. Tag names are
+case-insensitively unique per workspace, whitespace is normalized, and names
+may contain at most 40 characters. Colors use `#RRGGBB` notation. Viewers can
+read tags; operator or higher is required to change them.
 
 ### `GET /api/proxyTags`
 
-Returns the user's tags ordered by name.
+Returns the workspace's tags ordered by name.
 
 ```json
 [
@@ -138,15 +146,16 @@ Creates a tag and returns it with status `201`.
 
 ### `PUT /api/proxyTags/{id}`
 
-Renames and recolors one of the user's tags using the same request body as creation.
+Renames and recolors one of the workspace's tags using the same request body as creation.
 
 ### `DELETE /api/proxyTags/{id}`
 
-Deletes one of the user's tags and all of its assignments. Returns `204`; proxies are not deleted.
+Deletes one of the workspace's tags and all of its assignments. Returns `204`; proxies are not deleted.
 
 ### `PUT /api/proxies/{id}/tags`
 
-Replaces the authenticated user's complete tag selection for a proxy. An empty array removes every tag from that proxy.
+Replaces the selected workspace's complete tag selection for a managed proxy.
+An empty array removes every tag from that proxy.
 
 Request:
 
@@ -165,11 +174,28 @@ Response:
 }
 ```
 
-Unknown tags, tags owned by another user, and proxies outside the user's pool return `404`. Duplicate names return `409`; invalid names, colors, or path IDs return `400`.
+Unknown tags, tags owned by another workspace, and routes not managed by the
+selected workspace return `404`. Duplicate names return `409`; invalid names,
+colors, or path IDs return `400`.
 
 ## `GET /api/proxies/{id}`
 
-Requires auth. Returns proxy detail including latest statistic, reputation breakdown, and the authenticated user's `tags` array.
+Requires viewer or higher. Returns proxy detail including latest statistic,
+reputation breakdown, the selected workspace's `tags`, and its `state` and
+optional `pause_reason`.
+
+## `PUT /api/proxies/{id}/lifecycle`
+
+Requires operator or higher. Sets the selected workspace's managed-proxy state
+to `active`, `paused`, or `archived`.
+
+```json
+{"state": "paused"}
+```
+
+Returns `204`. Activating a route at a finite workspace capacity limit returns
+`409`. A paused or archived association remains stored and stops contributing
+that workspace to checker and rotator work.
 
 ## `GET /api/proxies/{id}/statistics`
 
@@ -213,7 +239,9 @@ Response:
 
 ## `DELETE /api/proxies`
 
-Requires auth. Supports two body modes.
+Requires operator or higher. Deletes selected workspace associations and
+supports two body modes. A globally shared route remains stored while any other
+workspace manages it.
 
 Mode A: selected IDs array.
 

@@ -6,7 +6,10 @@
 POST /api/graphql
 ```
 
-GraphQL uses the same bearer token auth as REST (`Authorization: Bearer <token>`).
+GraphQL uses the same bearer token auth and workspace selection as REST. Send
+`X-Workspace-ID`, or omit it to use the account's default membership. Viewer or
+higher is required for queries; the settings mutation requires operator or
+higher.
 
 ## Request envelope
 
@@ -19,7 +22,7 @@ GraphQL uses the same bearer token auth as REST (`Authorization: Bearer <token>`
 
 ## Root fields
 
-Current schema exposes:
+Current schema exposes workspace-scoped data through:
 
 - `Query.viewer`
 - `Mutation.updateUserSettings(input: UpdateUserSettingsInput!)`
@@ -28,8 +31,9 @@ Current schema exposes:
 
 `viewer` includes:
 
-- Identity: `id`, `email`, `role`
-- Settings: protocol/checker settings, judges, scraping source URLs, table-column preferences
+- Identity: account `id`, `email`, and global instance `role`
+- Settings: workspace protocol/checker settings, judges, scraping source URLs,
+  and per-member/workspace table-column preferences
 - Dashboard: counts and breakdowns
 - Proxy metrics: `proxyCount`, `proxyLimit`, `proxyHistory`, `proxySnapshots`
 - Paged resources: `proxies(page: Int!)`, `scrapeSources(page: Int!)`
@@ -62,6 +66,8 @@ query DashboardData($proxyPage: Int!) {
         anonymityLevel
         alive
         latestCheck
+        state
+        pauseReason
         tags { id name color }
       }
     }
@@ -102,7 +108,8 @@ Supported input fields are optional booleans/integers plus `judges`, `scrapingSo
 
 Current behavior note:
 
-- GraphQL settings mutation delegates persistence to `database.UpdateUserSettings`.
+- GraphQL settings mutation delegates persistence to the selected workspace
+  settings path despite the compatibility-oriented resolver name.
 - In current backend behavior, scrape-source lifecycle is still managed by REST scrape-source endpoints.
 
 ## Query guardrails
