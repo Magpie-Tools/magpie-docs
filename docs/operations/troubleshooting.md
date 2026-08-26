@@ -30,10 +30,12 @@ Common defaults:
 Check:
 
 - mail envs: `MAIL_FROM_ADDRESS`, `MAIL_FROM_NAME`, `EMAIL_BRAND_IMAGE_URL`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_USERNAME`, `SMTP_PASSWORD`
-- `PUBLIC_APP_URL` is set correctly
+- `PUBLIC_APP_URL` is set correctly for password-reset and `/invitations` links
 - SMTP provider accepts the sender address and credentials
 - outbox worker envs if mail is backing up or retrying (`EMAIL_OUTBOX_*`, `EMAIL_RETRY_BASE_SECONDS`, `EMAIL_MAX_ATTEMPTS`)
 - backend logs for SMTP, outbox, or configuration errors
+
+For workspace invitations, an email failure does not remove the pending offer. Check `/invitations` while signed in as the recipient and the outgoing invitation's notification status on `/workspace`. There is no manual resend action; changing role or billing access queues an “invitation changed” email without extending expiry.
 
 ## Password reset link is invalid or expired
 

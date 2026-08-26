@@ -11,7 +11,8 @@ The Angular app routes map to these core views:
 - `/scraper/:id`: scrape source details and related proxies
 - `/checker/settings`: active workspace checker settings
 - `/checker/judges`: active workspace judge settings
-- `/workspace`: workspace capacity, subscription entitlement, and members
+- `/workspace`: workspace capacity, details, members, and outgoing invitations
+- `/invitations`: pending workspace invitations for the signed-in account
 - `/account`: account and password actions
 - `/notifications`: release/build notifications
 

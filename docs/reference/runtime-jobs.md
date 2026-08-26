@@ -18,6 +18,7 @@ Magpie starts several long-running routines on backend startup.
 - scraper thread dispatcher
 - email delivery routine (durable outbox worker)
 - password reset token cleanup routine
+- workspace invitation cleanup routine
 
 ## Leadership and coordination
 
@@ -49,3 +50,5 @@ Password recovery maintenance is configured via:
 - `EMAIL_OUTBOX_RETENTION_HOURS`
 - `EMAIL_RETRY_BASE_SECONDS`
 - `EMAIL_MAX_ATTEMPTS`
+
+The workspace invitation cleanup routine runs hourly under a Redis leader lock and deletes expired invitation rows. New invitation lifetime is configured with `WORKSPACE_INVITATION_TTL_HOURS`; cleanup does not renew or archive invitations.

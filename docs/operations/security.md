@@ -37,6 +37,16 @@
 - Default forgot-password per-email throttle is 1 request per minute.
 - Reset and confirmation emails are written to the durable DB outbox and retried asynchronously across backend instances.
 
+## Workspace invitation security
+
+- Invitations are bound to an existing user ID and can be accepted or declined only by that authenticated account.
+- No bearer token is placed in an invitation URL or email, so forwarding a notification does not transfer the offer.
+- The database invitation row is authoritative. Email is optional and an email enqueue failure never grants access or removes the pending offer.
+- Acceptance creates membership and deletes the invitation in one transaction. Pending rows are also deleted on decline, revoke, and expiry cleanup.
+- A unique database constraint permits one pending invitation per workspace and recipient account.
+- Owners can manage all invitation roles and billing access. Admins are restricted to operator/viewer invitations without billing access.
+- `PUBLIC_APP_URL` supplies the fixed inbox link in email; request headers are not trusted.
+
 ## SMTP and transport hardening
 
 - SMTP delivery fails closed unless TLS is established.

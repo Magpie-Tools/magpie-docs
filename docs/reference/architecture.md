@@ -36,6 +36,7 @@ User account
           ├─ Managed proxy routes
           ├─ Tags, judges, sources, and rotators
           ├─ Members and roles
+          ├─ Pending account-bound invitations
           ├─ Subscription
           └─ Capacity and usage
 ```
@@ -44,6 +45,8 @@ Accounts retain login identity, password, global instance role, and
 user-per-workspace display preferences. Operational resources and settings
 belong to a workspace. A member leaving changes authorization only; it does
 not remove resources or reduce capacity.
+
+Workspace invitations are the pre-membership state. They reference an existing account, grant no access until accepted, and remain workspace-owned if their inviter leaves. Email is a best-effort notification through the durable outbox; the authenticated `/invitations` inbox and PostgreSQL row are authoritative.
 
 `Organization` is reserved for a future consolidated-billing and SSO parent
 of multiple workspaces. `Team` is reserved for a future permission group
@@ -71,4 +74,5 @@ excluding protocol headers.
 
 See the backend decision record
 `docs/adr/0005-make-workspaces-the-ownership-and-capacity-boundary.md` for the
-trade-offs.
+ownership trade-offs and `docs/adr/0006-use-account-bound-workspace-invitations.md`
+for the invitation model.

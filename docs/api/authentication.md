@@ -65,6 +65,13 @@ not grant access: the authenticated account must still be a member. See
 - Reset requests are throttled both by request volume and by target account identifier.
 - Default per-email forgot-password throttle is 1 request per 60 seconds.
 
+## Workspace invitation authentication
+
+- Invitation inbox, accept, and decline endpoints require the recipient's normal bearer token.
+- Invitation emails contain no acceptance token and link only to `/invitations`.
+- Workspace membership is not required to list or act on an invitation addressed to the authenticated account.
+- Managing outgoing invitations requires admin or owner access to the workspace path ID.
+
 ## GraphQL authentication
 
 - GraphQL endpoint: `POST /api/graphql`

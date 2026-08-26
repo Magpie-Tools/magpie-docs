@@ -61,24 +61,30 @@ Auth route rate limiting:
 - `AUTH_LOGIN_FAILURE_LIMIT_PER_EMAIL` (default `10`)
 - `AUTH_RATE_LIMIT_LOCAL_FALLBACK_MAX_KEYS` (default `10000`)
 
-## Outbound email and password recovery
+## Outbound email, password recovery, and invitations
 
 Mail configuration:
 
-- `MAIL_FROM_ADDRESS`: sender address used for outbound auth/recovery mail.
+- `MAIL_FROM_ADDRESS`: sender address used for outbound auth/recovery and workspace-invitation mail.
 - `MAIL_FROM_NAME`: optional sender display name.
-- `EMAIL_BRAND_IMAGE_URL`: optional public absolute `https://` image URL shown at the top of branded auth/recovery emails.
+- `EMAIL_BRAND_IMAGE_URL`: optional public absolute `https://` image URL shown at the top of branded auth/recovery and invitation emails.
 - `SMTP_HOST`: SMTP server hostname.
 - `SMTP_PORT` (default `587`): SMTP submission port. Port `587` requires successful `STARTTLS`; port `465` uses implicit TLS.
 - `SMTP_USERNAME`: optional SMTP auth username. Set together with `SMTP_PASSWORD`.
 - `SMTP_PASSWORD`: optional SMTP auth password. Set together with `SMTP_USERNAME`.
-- `PUBLIC_APP_URL`: required base URL used to build password-reset links.
+- `PUBLIC_APP_URL`: required when email delivery is enabled. Used to build password-reset links and the fixed `/invitations` inbox link; request headers are never used as the public base URL.
 
 Password reset behavior:
 
 - `PASSWORD_RESET_TOKEN_TTL_MINUTES` (default `30`)
 - `PASSWORD_RESET_CLEANUP_INTERVAL`: duration string for expired-token cleanup
 - `PASSWORD_RESET_CLEANUP_INTERVAL_MINUTES`: integer fallback for expired-token cleanup
+
+Workspace invitation behavior:
+
+- `WORKSPACE_INVITATION_TTL_HOURS` (default `168`, allowed `1..720`): lifetime of a new invitation in whole hours. Editing an invitation never renews this expiry.
+
+SMTP is optional for invitations. When mail is not configured, pending invitations are still created and remain visible in the in-app inbox.
 
 Durable email outbox worker:
 

@@ -43,7 +43,7 @@ Additional headers used by specific endpoints:
 ## Endpoint groups
 
 - Auth and user: register/login/token lifecycle, password/account, user settings
-- Workspaces: selection, capacity, subscription entitlement, members, and roles
+- Workspaces: selection, capacity, subscription entitlement, account-bound invitations, members, and roles
 - Proxies: upload, list/filter, detail/stats, delete, export
 - Rotating proxies: create/list/delete/manual rotate + instance discovery
 - Scraping sources: upload/list/detail/delete/robots checks

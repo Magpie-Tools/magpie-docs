@@ -21,9 +21,30 @@ API clients select a workspace with `X-Workspace-ID`. If the header is omitted, 
 
 Operators can import, tag, pause, activate, archive, and delete managed proxies. They can also change workspace settings and manage scrape sources and rotators. Viewers have read-only access. Billing-administrator status is separate from the role and is reserved for future billing operations; only an owner can grant or revoke it.
 
-Members must already have a Magpie account before an admin can add them by email. A workspace must always keep at least one owner. Transfer ownership before deleting an account that is the sole owner of a shared workspace.
+Owners can manage every role. Admins can invite, edit, and remove operators and viewers, but cannot manage owners, other admins, or billing access. A workspace must always keep at least one owner. Transfer ownership before removing the final owner or deleting an account that is the sole owner of a shared workspace.
 
 Removing a member only revokes access. It does not change the workspace's subscription or capacity, pause routes, or delete infrastructure.
+
+## Invitations
+
+Workspace access starts as a pending invitation, not an immediate membership. The recipient must already have a Magpie account, and the invitation is bound to that account. There is no invitation link or bearer token that can be forwarded to another person.
+
+Owners can invite admins, operators, and viewers. Admins can invite operators and viewers. Only owners can include billing access. A workspace can have one pending invitation for each recipient account.
+
+Pending invitations appear in two places:
+
+- Workspace admins and owners see outgoing invitations on `/workspace`, including recipient, inviter, role, billing access, expiry, and notification status. They can edit permitted access or revoke the invitation.
+- Recipients see invitations from every workspace on `/invitations`. Accepting creates the membership; declining deletes the invitation.
+
+Accepting does not switch the active workspace or change the account's default workspace. Use **Open workspace** or the top-bar selector when you want to switch.
+
+Invitations expire after seven days by default. Editing an invitation does not renew its expiry. Accepted, declined, revoked, and expired invitations are deleted rather than kept as history.
+
+### Email notifications
+
+If SMTP is configured, Magpie automatically queues an email when an invitation is created and an “invitation changed” email when its role or billing access changes. Users cannot manually resend either message.
+
+Email is only a notification channel. If SMTP is missing or the outbox cannot queue the message, the pending invitation remains available in `/invitations`. No email is sent when an invitation is accepted, declined, revoked, or expires.
 
 ## Managed route capacity
 

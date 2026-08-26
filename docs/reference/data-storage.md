@@ -5,7 +5,7 @@
 Primary persistent store for:
 
 - user accounts and global instance roles
-- workspaces, memberships, workspace roles, and member preferences
+- workspaces, memberships, pending workspace invitations, workspace roles, and member preferences
 - subscription entitlements and monthly usage periods
 - proxy routes, workspace-managed proxies, and lifecycle state
 - proxy statistics and reputation snapshots
@@ -32,6 +32,10 @@ with plan constraints and private provider references. `workspace_usage_periods`
 stores monthly active/peak routes, check attempts, and reserved managed-traffic
 meters. Rotator request and payload-byte deltas are flushed to these rows in
 batches. Membership rows never contain capacity.
+
+`workspace_invitations` contains only live, account-bound offers. Each row stores the workspace, recipient account, requested access, expiry, notification state, and an inviter email snapshot. The inviter foreign key is nullable so the workspace can continue to manage the invitation after the inviter leaves. Acceptance, decline, revoke, and expiry cleanup delete the row; Magpie does not retain invitation history.
+
+The durable email outbox carries optional invitation notifications independently of invitation persistence. Outbox delivery state never controls whether an invitation can be accepted.
 
 ## Redis
 
