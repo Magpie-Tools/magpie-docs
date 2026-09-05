@@ -27,7 +27,9 @@ Values `prod` or `production` are treated as production.
 - `CORS_ALLOWED_ORIGINS` (default `http://localhost:5050,http://127.0.0.1:5050,http://localhost:4200,http://127.0.0.1:4200`): comma-separated CORS origin allowlist. Use `*` only in trusted environments.
 - `SERVER_READ_TIMEOUT_SECONDS` (default `30`)
 - `SERVER_READ_HEADER_TIMEOUT_SECONDS` (default `10`)
-- `SERVER_WRITE_TIMEOUT_SECONDS` (default `30`)
+- `SERVER_WRITE_TIMEOUT_SECONDS` (default `30`): normal API response write timeout. Proxy exports use the separate deadline below.
+- `PROXY_EXPORT_TIMEOUT_SECONDS` (default `300`): total proxy export database and formatting time. The response write deadline adds 5 seconds so an error can be sent when no data has been written.
+- `EXPORT_PROXY_READ_TIMEOUT_SECONDS` (default `310`, frontend container): nginx timeout between reads from the proxy export endpoint, including the initial response. Keep this at least 10 seconds above `PROXY_EXPORT_TIMEOUT_SECONDS`. Compose passes both export settings from `.env`; recreate backend and frontend containers after changing them. Configure any external reverse proxy accordingly.
 - `SERVER_IDLE_TIMEOUT_SECONDS` (default `120`)
 - `SERVER_SHUTDOWN_TIMEOUT_SECONDS` (default `20`): graceful shutdown timeout used by the API server.
 - `API_UPLOAD_MAX_BODY_BYTES` (default `10485760`, 10 MiB): max request size for multipart upload endpoints.

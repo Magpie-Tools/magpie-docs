@@ -92,7 +92,16 @@ Deleting a tag removes that tag from every proxy without deleting the proxies th
 
 ## Export proxies
 
-`POST /api/user/export` returns formatted text.
+`POST /api/user/export` returns formatted text. The backend sends completed batches
+as they become available; the browser saves the file after the whole response
+finishes. Exports have a separate five-minute work limit by default, and closing
+the request cancels its database work. If the export times out or the connection
+is interrupted, retry with a smaller selection. A partial transfer is a failed
+export, not a complete file.
+
+Administrators can adjust `PROXY_EXPORT_TIMEOUT_SECONDS` and the frontend's
+`EXPORT_PROXY_READ_TIMEOUT_SECONDS` together. See the [environment variable
+reference](../reference/environment-variables.md#api-hardening).
 
 Output format is a template string; placeholders include:
 
