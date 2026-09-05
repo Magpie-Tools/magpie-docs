@@ -17,6 +17,7 @@ Accepted form fields:
 - `file`
 - `scrapeSourceTextarea`
 - `clipboardScrapeSources`
+- `fetch_mode`: `http` by default, or `browser` for JavaScript rendering. Applies only to newly added workspace associations.
 
 Success (`200`):
 
@@ -98,3 +99,22 @@ Response:
   "respect_robots_txt": true
 }
 ```
+
+## `PATCH /api/scrapingSources/{id}`
+
+Requires operator or higher in the active workspace. Updates only that
+workspace's source setting. Other workspaces using the URL retain their settings.
+
+```json
+{"fetch_mode": "browser"}
+```
+
+Accepted values are `http` and `browser`. Success returns `200` with the saved
+`fetch_mode`. Invalid modes return `400`; sources outside the active workspace
+return `404`. The last scrape status clears when settings are saved, and the
+new mode applies on the next scrape.
+
+Source list and detail responses include `fetch_mode`, `last_scraped_at`,
+`last_scrape_status`, `last_scrape_error`, and `last_scrape_proxy_count`.
+`last_scrape_status` is empty before an attempt, then `success`, `empty`, `error`,
+or `blocked`. These fields describe scraping, independently of proxy health.

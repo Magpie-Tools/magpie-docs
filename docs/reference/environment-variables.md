@@ -217,12 +217,12 @@ Orphan cleanup controls:
 
 ## Worker/tuning envs
 
-- `SCRAPER_PAGE_POOL_MIN_CAPACITY`
-- `SCRAPER_PAGE_POOL_MAX_CAPACITY`
-- `SCRAPER_POST_PROCESS_QUEUE_CAPACITY`
+- `SCRAPER_PAGE_POOL_MIN_CAPACITY`: obsolete; browser pages are created on demand.
+- `SCRAPER_PAGE_POOL_MAX_CAPACITY`: concurrent browser scrapes per instance, default `4`, clamped to `1`–`64`. HTTP fetching does not consume browser capacity. Read at first browser use; restart to change it.
+- `SCRAPER_POST_PROCESS_QUEUE_CAPACITY`: queued HTML jobs, default `16`, clamped to `1`–`4096`.
 - `SCRAPER_POST_PROCESS_WORKERS`
-- `SCRAPER_CAPTURED_MAX_RESPONSE_BODY_BYTES`
-- `SCRAPER_FALLBACK_MAX_RESPONSE_BODY_BYTES`
+- `SCRAPER_CAPTURED_MAX_RESPONSE_BODY_BYTES`: maximum returned rendered HTML, default 8 MiB. This does not bound Chromium process memory.
+- `SCRAPER_FALLBACK_MAX_RESPONSE_BODY_BYTES`: maximum HTTP response body, default 8 MiB. The variable name is retained for compatibility.
 - `CHECKER_DEFAULT_REQUEST_TIMEOUT_MS`
 - `CHECKER_MAX_RESPONSE_BODY_BYTES`
 

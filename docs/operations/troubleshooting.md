@@ -146,3 +146,24 @@ Check effective env values:
 ## Build or install dependency issues
 
 Delete `node_modules` and lockfile in the affected workspace and reinstall.
+
+## Sources stay empty or scraping stops
+
+Open a source's detail page and check the last scrape outcome and error. Proxy
+health's **No data** label describes discovered proxies, not fetch availability.
+Use HTTP for raw lists and static HTML. Enable **Requires JavaScript** only when
+the page needs it to produce proxy data.
+
+Browser sources share a bounded Chromium instance per backend. Its default
+concurrency is four. Capacity failures and browser outages are retried without
+blocking workers waiting for a page. Cleanup has a two-second deadline and an
+unresponsive browser is discarded; startup failures back off for 30 seconds.
+
+If browser failures persist, check backend logs for `scrape failed` entries,
+Chromium launch errors, and container memory pressure. HTTP sources continue
+without Chromium. Capture logs around the first failure, along with the backend
+version, memory limit, and `SCRAPER_PAGE_POOL_MAX_CAPACITY`.
+
+On upgrade, run the normal migration step before restarting all backend
+replicas. Existing sources preserve their browser mode; switch static sources
+to HTTP from the detail page to reduce resource use.
