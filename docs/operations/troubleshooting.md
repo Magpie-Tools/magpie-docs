@@ -167,3 +167,23 @@ version, memory limit, and `SCRAPER_PAGE_POOL_MAX_CAPACITY`.
 On upgrade, run the normal migration step before restarting all backend
 replicas. Existing sources preserve their browser mode; switch static sources
 to HTTP from the detail page to reduce resource use.
+
+### PostgreSQL parameter limit while saving scraped proxies
+
+`process scrape result ... extended protocol limited to 65535 parameters`
+means a database statement used too many bound values after the source was
+fetched. It does not indicate a browser failure. PostgreSQL limits each statement
+to [65,535 parameters](https://www.postgresql.org/docs/current/limits.html), not
+65,535 proxies across the deployment.
+
+Older builds batched proxy inserts but reused that batch size for the wider
+workspace-association table and left some hash lookups unbatched. A single source
+with 6,000 proxies could already exceed the limit in the association insert.
+Current builds calculate insert batch sizes separately for each table and split
+large hash lookups, including the workspace filter parameter.
+
+Upgrade the backend to a build containing this fix, then use **Scrape now** on
+failed sources or wait for their normal scrape interval. Reducing browser
+concurrency or switching fetching mode does not fix this database error. No
+additional schema migration or batch-size environment setting is needed for
+this fix.
