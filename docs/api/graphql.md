@@ -104,13 +104,21 @@ mutation Update($input: UpdateUserSettingsInput!) {
 }
 ```
 
-Supported input fields are optional booleans/integers plus `judges`, `scrapingSources`, and column-list arrays.
+Input fields are optional. Supported fields include the checker booleans,
+`timeout`, `retries`, `autoRemoveFailureThreshold`, `judges`, and column-list
+arrays. Omitted fields retain their current values.
 
-Current behavior note:
+- `timeout` accepts integers from `0` to `65535`.
+- `retries` and `autoRemoveFailureThreshold` accept integers from `0` to `255`.
+- Values outside these ranges are rejected before settings are saved.
+- Judge changes refresh the checker cache and are broadcast to other backend
+  instances. Blocked judge websites are rejected, as in REST.
+- `scrapingSources` is a response field only. Manage sources through the REST
+  scrape-source endpoints. The previously accepted, no-op `scrapingSources`
+  mutation input has been removed; clients must omit it from mutation variables.
 
-- GraphQL settings mutation delegates persistence to the selected workspace
-  settings path despite the compatibility-oriented resolver name.
-- In current backend behavior, scrape-source lifecycle is still managed by REST scrape-source endpoints.
+The mutation saves settings for the selected workspace, despite the legacy
+`updateUserSettings` name.
 
 ## Query guardrails
 
