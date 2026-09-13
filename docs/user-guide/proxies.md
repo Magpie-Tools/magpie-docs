@@ -49,6 +49,8 @@ Selecting several tags matches proxies that have any selected tag. Search accept
 
 The proxy list uses a two-row dashboard toolbar: list actions, refresh, filters, and column controls are grouped above a full-width search field. The Tags column is always available so tags can be changed without leaving the list.
 
+The default **Actions** column opens an ellipsis menu. To use the previous inline buttons, select **Actions (buttons)** in the column picker. You can hide **Actions** or keep both columns. The buttons show Pause or Activate, Archive for paused routes, and Details, subject to your permissions. The selection is saved with your table preferences.
+
 ## Lifecycle
 
 Each managed proxy is active, paused, or archived. Active routes are checked,
