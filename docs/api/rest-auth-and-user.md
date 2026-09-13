@@ -277,3 +277,13 @@ Response:
 
 - `Content-Type: text/plain`
 - Body contains the formatted export content.
+
+## `GET /api/user/profile`
+
+Requires authentication. Returns the signed-in account's email and role, independent of the selected workspace.
+
+```json
+{"email": "admin@example.com", "role": "admin"}
+```
+
+The frontend uses this endpoint to restore the session and display the email in the sidebar account menu. `GET /api/user/role` remains available.
