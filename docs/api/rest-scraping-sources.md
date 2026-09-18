@@ -68,7 +68,7 @@ Query params:
 - `pageSize`
 - `search`
 - same filter params as proxy list:
-  - `status`, `protocol`, `country`, `type`, `anonymity`, `reputation`, `tagId`, `maxTimeout`, `maxRetries`
+  - `state`, `status`, `protocol`, `country`, `type`, `anonymity`, `reputation`, `tagId`, `maxTimeout`, `maxRetries`
 
 Rows include the selected workspace's `tags` array. Search matches tag names,
 and repeated `tagId` values use ANY matching. Operators can assign tags here

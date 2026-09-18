@@ -271,6 +271,8 @@ Request:
 }
 ```
 
+When filtering is enabled, the optional `states` array accepts `active`, `paused`, and `archived` with ANY matching, for example `"states": ["paused", "archived"]`. The single `state` field remains supported. Omitting it includes all lifecycle states.
+
 When filtering is enabled, `tagIds` matches proxies that have any selected tag.
 
 Response:

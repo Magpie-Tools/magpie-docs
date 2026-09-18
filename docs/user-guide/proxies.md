@@ -41,9 +41,12 @@ Filter/query parameters include:
 
 - `search`
 - `pageSize`
+- repeated `state=active|paused|archived`
 - `status=alive|dead`
 - repeated: `protocol`, `country`, `type`, `anonymity`, `reputation`, `tagId`
 - `maxTimeout`, `maxRetries`
+
+Choose **Lifecycle state** below Country and Type in the Filters panel. You can select multiple states, such as Paused and Archived, to include proxies in either state. An empty selection shows **All states**. Lifecycle state combines with alive/dead status and the other filters, and is saved with your list preferences. Export and delete filter panels offer the same lifecycle choices.
 
 Selecting several tags matches proxies that have any selected tag. Search accepts tag names, complete or partial provider hostnames, IPv4, IPv6, and CIDR terms.
 

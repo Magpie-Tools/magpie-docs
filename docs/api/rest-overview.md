@@ -59,6 +59,7 @@ Proxy list endpoints support:
 - Optional `pageSize`
 - Optional `search`
 - Optional filter query params:
+  - repeated `state=active|paused|archived`
   - `status=alive|dead`
   - repeated: `protocol`, `country`, `type`, `anonymity`, `reputation`, `tagId`
   - numeric: `maxTimeout`, `maxRetries`

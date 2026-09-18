@@ -61,6 +61,7 @@ Query params:
 
 - `pageSize`
 - `search`
+- repeated `state=active|paused|archived`
 - `status=alive|dead`
 - repeated `protocol=http|https|socks4|socks5`
 - repeated `country`
@@ -70,6 +71,8 @@ Query params:
 - repeated `tagId`
 - `maxTimeout`
 - `maxRetries`
+
+The optional repeated `state` filter selects workspace lifecycle states independently of alive/dead `status`. For example, `state=paused&state=archived` includes proxies in either state. Omitting it includes all lifecycle states. Unsupported values are ignored.
 
 Several `tagId` values use ANY matching: a proxy is included when it has at least one selected tag. The `search` parameter also matches tag names.
 
@@ -267,6 +270,8 @@ Mode B: filter object.
   "scope": "selected"
 }
 ```
+
+When `filter` is enabled, the optional `states` array accepts `active`, `paused`, and `archived` with ANY matching, for example `"states": ["paused", "archived"]`. The single `state` field remains supported. Omitting it includes all lifecycle states.
 
 When `filter` is enabled, `tagIds` uses the same ANY matching as proxy-list filtering.
 
