@@ -13,6 +13,12 @@ Scrape sources are websites Magpie crawls to discover proxies.
 
 ## Table actions
 
+Click the URL, proxy count, alive count, or health column header to sort all
+matching sources across pages. Click again to reverse the order, then a third
+time to restore the default newest-added order. Changing the
+sort returns to the first page. A thin progress bar appears while the existing
+rows dim until the updated results arrive.
+
 Use the ellipsis in the **Actions** column to view source details or copy its URL.
 Administrators can also choose **Scrape now**. **Check robots.txt** is available
 when respecting robots.txt is enabled. Pending actions are disabled until the

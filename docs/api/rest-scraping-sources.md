@@ -8,6 +8,21 @@ Requires viewer or higher. Returns source count for the selected workspace.
 
 Requires viewer or higher. Returns paged source summaries for the selected workspace.
 
+Query parameters:
+
+- `pageSize`: 1–100, defaults to 40.
+- `search`: source URL search.
+- `protocol`: repeat for multiple protocols, `http` or `https`.
+- `proxyCount`, `proxyCountOperator`, `aliveCount`, `aliveCountOperator`: positive count thresholds with `>` or `<`.
+- `sortField`: `url`, `proxy_count`, `alive_count`, or `health`.
+- `sortOrder`: `asc` or `desc`.
+
+Sorting applies to all matching sources before pagination. Health sorts by the
+alive-to-total proxy ratio; sources with no proxies sort before zero-health
+sources ascending and after them descending. URL sorting is case-insensitive.
+Equal values use source ID ascending for stable pagination. Missing or invalid
+sort parameters keep the default newest-added order, with source ID as a tie-breaker.
+
 ## `POST /api/scrapingSources`
 
 Requires operator or higher. Uploads sources for the selected workspace from multipart form data.
