@@ -11,6 +11,18 @@ Scrape sources are websites Magpie crawls to discover proxies.
 - `GET /api/scrapingSources/{id}`
 - `GET /api/scrapingSources/{id}/proxies`
 
+## Table actions
+
+Use the ellipsis in the **Actions** column to view source details or copy its URL.
+Administrators can also choose **Scrape now**. **Check robots.txt** is available
+when respecting robots.txt is enabled. Pending actions are disabled until the
+request completes.
+
+Select **Actions (buttons)** in **Columns** to show the previous inline Details
+button. The separate **Scrape Now** and **Robots Check** columns remain available.
+**Robots Check** is hidden by default; saved column selections are preserved.
+The inline-actions preference requires matching frontend and backend releases.
+
 ## Add sources input
 
 `POST /api/scrapingSources` accepts multipart content from:
