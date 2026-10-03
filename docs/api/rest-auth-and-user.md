@@ -213,6 +213,7 @@ Response shape:
   "transport_protocol": "tcp",
   "auto_remove_failing_proxies": false,
   "auto_remove_failure_threshold": 3,
+  "failure_action": "pause",
   "judges": [{"url": "https://example/judge", "regex": "..."}],
   "scraping_sources": ["https://example/source"],
   "proxy_list_columns": ["ip", "country"],
@@ -228,6 +229,16 @@ protocol/checker settings and judges. Column preferences are stored for the
 authenticated user in that workspace.
 
 Request uses the same fields as `GET /api/user/settings`.
+
+`failure_action` accepts `pause` or `delete` and defaults to `pause`. If omitted
+or empty, the stored action is preserved for compatibility with older clients.
+An unsupported value returns `400` before any settings are saved. The existing
+`auto_remove_failing_proxies` flag enables the chosen action, and
+`auto_remove_failure_threshold` sets its consecutive-failure threshold.
+Delete applies only to the selected workspace's active managed proxies after a
+subsequent failed check. It does not delete already-paused proxies or enforce
+saved failure streaks during startup. A later import or scrape can add the route
+again. See [automatic failure action](../user-guide/checker-and-judges.md#automatic-failure-action).
 
 Success (`200`):
 

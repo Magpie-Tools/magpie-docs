@@ -11,7 +11,7 @@ Workspace settings include:
 - timeout and retries
 - transport protocol
 - `use_https_for_socks`
-- automatic failure-pause settings (the compatibility API fields retain the
+- automatic failure-action settings, choosing Pause or Delete (the compatibility API fields retain the
   `auto_remove` name)
 - judge list (`url`, `regex`)
 
@@ -29,6 +29,34 @@ GraphQL equivalent:
 
 - Query: `viewer.settings`
 - Mutation: `updateUserSettings(input: ...)`
+
+## Automatic failure action
+
+In **Checker Settings**, enable automatic failure handling, choose **Pause** or
+**Delete**, and set the number of consecutive failed checks. The action applies
+to the selected workspace. Automatic handling is disabled by default, the
+default action is Pause, and the default threshold is three failed checks.
+
+A failure means a completed check cycle had eligible judge/protocol checks but
+none succeeded. Any successful result resets the workspace's failure streak.
+A cycle with no eligible checks does not count as a failure. The threshold UI
+accepts 1 through 255; the APIs also accept zero to disable threshold enforcement.
+
+- **Pause** retains the managed proxy, credentials, and tag assignments so you
+  can activate it again. Reimporting or scraping it again leaves it paused.
+- **Delete** removes the managed proxy, credentials, failure streak, and tag
+  assignments from this workspace. Other workspaces managing the same route
+  retain their proxies. Later scraping or import may add the deleted route
+  again with a fresh failure streak and without its former tag assignments.
+
+Changing the action preserves current failure streaks and leaves already-paused
+and archived proxies untouched. Delete requires a subsequent failed check,
+including after a restart. Pause keeps the existing startup cleanup of active
+proxies whose saved failure streak already meets the threshold.
+
+REST exposes the choice as `failure_action`, accepting `pause` or `delete`.
+GraphQL uses `failureAction` with the same values. Omitting the action when
+saving settings preserves the workspace's current choice.
 
 ## Judge notes
 

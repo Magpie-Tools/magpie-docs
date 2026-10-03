@@ -95,6 +95,7 @@ mutation Update($input: UpdateUserSettingsInput!) {
     useHttpsForSocks
     autoRemoveFailingProxies
     autoRemoveFailureThreshold
+    failureAction
     judges { url regex }
     scrapingSources
     proxyListColumns
@@ -105,12 +106,17 @@ mutation Update($input: UpdateUserSettingsInput!) {
 ```
 
 Input fields are optional. Supported fields include the checker booleans,
-`timeout`, `retries`, `autoRemoveFailureThreshold`, `judges`, and column-list
+`timeout`, `retries`, `autoRemoveFailureThreshold`, `failureAction`, `judges`, and column-list
 arrays. Omitted fields retain their current values.
 
 - `timeout` accepts integers from `0` to `65535`.
 - `retries` and `autoRemoveFailureThreshold` accept integers from `0` to `255`.
 - Values outside these ranges are rejected before settings are saved.
+- `failureAction` accepts `"pause"` or `"delete"`, with `"pause"` as the default.
+  Omitted or empty values preserve the stored choice. Unsupported values are
+  rejected before any settings are saved. `autoRemoveFailingProxies` enables
+  the selected action. See [automatic failure action](../user-guide/checker-and-judges.md#automatic-failure-action)
+  for deletion scope, rediscovery, and startup behavior.
 - Judge changes refresh the checker cache and are broadcast to other backend
   instances. Blocked judge websites are rejected, as in REST.
 - `scrapingSources` is a response field only. Manage sources through the REST
