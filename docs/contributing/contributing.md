@@ -4,7 +4,7 @@ Contributions are welcome.
 
 ## Project areas
 
-- [`magpie-backend`](https://github.com/Magpie-Tools/magpie-backend): Go `1.26` services, jobs, and data layer
+- [`magpie-backend`](https://github.com/Magpie-Tools/magpie-backend): Go `1.27.1` services, jobs, and data layer
 - [`magpie-frontend`](https://github.com/Magpie-Tools/magpie-frontend): Angular `21.1` dashboard
 - [`magpie-website`](https://github.com/Magpie-Tools/magpie-website): marketing website
 - [`magpie-docs`](https://github.com/Magpie-Tools/magpie-docs): technical documentation

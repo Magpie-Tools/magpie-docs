@@ -4,7 +4,11 @@
 
 ```bash
 # In magpie-backend
-go test ./...
+go test ./... -count=1
+go test -race ./... -count=1
+go vet ./...
+go build ./cmd/magpie
+go run golang.org/x/vuln/cmd/govulncheck@v1.8.0 ./...
 ```
 
 ## Frontend

@@ -18,6 +18,26 @@ default. If a deployment enables queue credential encryption, repeat the same
 test matrix with it enabled and treat the resulting checker capacity as a
 separate deployment profile.
 
+## Go and dependency upgrades
+
+The backend uses Go `1.27.1` in its module, CI, and Docker builder. Backend CI
+runs tests, race tests, vet, build, a vulnerability scan, and the PostgreSQL
+integration tests.
+
+For compiler and dependency comparisons, run the plaintext queue decode,
+Redis dequeue/requeue, and checker HTTP benchmarks documented in the
+[distribution performance harness](https://github.com/Magpie-Tools/magpie/blob/main/scripts/perf/README.md).
+Keep the Redis instance and PostgreSQL database isolated from running Magpie
+installations. Compare allocations and time per operation with the same
+settings on the same host, then run the sustained load and soak matrix below
+before a production rollout.
+
+The Redis client `9.22` changes its default read/write timeouts from `3s` to
+`5s`, and retry backoff from `8ms`/`512ms` to `10ms`/`1s`. In single-instance
+mode, explicit values in `REDIS_URL` continue to override those defaults.
+Include stalled Redis and reconnect cases when validating upgrade latency.
+TCP keep-alive now starts probing after `30s` of idle time, previously `5m`.
+
 ## Test matrix
 
 | Suite | Script | Default duration | Primary focus | Gate criteria |
