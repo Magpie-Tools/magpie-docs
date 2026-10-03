@@ -10,7 +10,7 @@ Primary persistent store for:
 - proxy routes, workspace-managed proxies, and lifecycle state
 - proxy statistics and reputation snapshots
 - workspace-owned proxy tags and their managed-proxy assignments
-- scrape sources and relations
+- scrape sources, workspace source settings, automatic-tag rules, and relations
 - rotating proxies
 
 Default Docker setup persists Postgres data via named volume `postgres_data`.
@@ -25,6 +25,12 @@ actively manages it.
 Tag catalogs and assignments are scoped to a workspace and managed proxy. Tags
 are not copied into Redis queue payloads and do not add work to the steady-state
 checker loop.
+
+`scrape_source_tags` stores each workspace source subscription's automatic tag
+selection. Its rules reference the existing workspace tag catalog. Source or tag
+deletion removes the corresponding rule rows. Scraping adds ordinary managed
+proxy tag assignments; changing or deleting a source rule does not remove those
+assignments. Rules and assignments remain in PostgreSQL, outside queue payloads.
 
 `workspace_subscriptions` is the entitlement snapshot and future billing seam.
 It stores included, additional, and permitted-overage route capacity together

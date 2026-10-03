@@ -48,6 +48,8 @@ accepts 1 through 255; the APIs also accept zero to disable threshold enforcemen
   assignments from this workspace. Other workspaces managing the same route
   retain their proxies. Later scraping or import may add the deleted route
   again with a fresh failure streak and without its former tag assignments.
+  A source's configured automatic tags or selected import tags may be assigned
+  when the route is added again.
 
 Changing the action preserves current failure streaks and leaves already-paused
 and archived proxies untouched. Delete requires a subsequent failed check,

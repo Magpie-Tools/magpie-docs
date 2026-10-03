@@ -153,12 +153,17 @@ Renames and recolors one of the workspace's tags using the same request body as 
 
 ### `DELETE /api/proxyTags/{id}`
 
-Deletes one of the workspace's tags and all of its assignments. Returns `204`; proxies are not deleted.
+Deletes one of the workspace's tags, its assignments, and references in source
+automatic-tag rules. Returns `204`; proxies are not deleted.
 
 ### `PUT /api/proxies/{id}/tags`
 
 Replaces the selected workspace's complete tag selection for a managed proxy.
 An empty array removes every tag from that proxy.
+
+A later scrape can add a removed tag again if it remains configured in that
+source's automatic tags. Source rules only add missing tags and never replace
+this proxy's other assignments.
 
 Request:
 

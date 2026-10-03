@@ -33,6 +33,7 @@ Accepted form fields:
 - `scrapeSourceTextarea`
 - `clipboardScrapeSources`
 - `fetch_mode`: `http` by default, or `browser` for JavaScript rendering. Applies only to newly added workspace associations.
+- `auto_tag_ids`: positive IDs from the workspace's tag catalog, repeated or comma-separated. Defaults to no automatic tags and applies the same selection to all newly added source subscriptions.
 
 Success (`200`):
 
@@ -55,6 +56,9 @@ Notes:
 
 - Oversized uploads return `413`.
 - If sources are saved but queueing fails, backend rolls back and returns `503`.
+- Re-adding an existing source preserves its fetch mode and automatic tags.
+- Invalid tag IDs or tags outside the selected workspace return `400`.
+- Saving automatic tags affects future scrape results, including rediscovered proxies, and leaves historical assignments unchanged.
 
 ## `DELETE /api/scrapingSources`
 
@@ -68,9 +72,20 @@ Request body is an array of scrape source IDs:
 
 Response is a JSON string, for example: `"Deleted 3 scraping sources."`.
 
+Deleting a source subscription removes its automatic-tag configuration and
+preserves tags already assigned to managed proxies.
+
 ## `GET /api/scrapingSources/{id}`
 
 Requires viewer or higher. Returns detailed source stats for the selected workspace.
+
+The `auto_tags` array contains the source subscription's selected automatic tags:
+
+```json
+{"auto_tags": [{"id": 4, "name": "Vendor A", "color": "#0EA5E9"}]}
+```
+
+It is an empty array when automatic tagging is disabled.
 
 ## `GET /api/scrapingSources/{id}/proxies`
 
@@ -86,8 +101,9 @@ Query params:
   - `state`, `status`, `protocol`, `country`, `type`, `anonymity`, `reputation`, `tagId`, `maxTimeout`, `maxRetries`
 
 Rows include the selected workspace's `tags` array. Search matches tag names,
-and repeated `tagId` values use ANY matching. Operators can assign tags here
-even though automatic scraping itself does not assign tags.
+and repeated `tagId` values use ANY matching. Operators can assign tags here.
+Source automatic tags add missing assignments during future scrapes without
+replacing manual tags or tags from another source.
 
 ## `GET /api/scrapingSources/check?url=...`
 
@@ -118,16 +134,28 @@ Response:
 ## `PATCH /api/scrapingSources/{id}`
 
 Requires operator or higher in the active workspace. Updates only that
-workspace's source setting. Other workspaces using the URL retain their settings.
+workspace's source settings. Other workspaces using the URL retain their settings.
 
 ```json
-{"fetch_mode": "browser"}
+{"fetch_mode": "browser", "auto_tag_ids": [4, 9]}
 ```
 
-Accepted values are `http` and `browser`. Success returns `200` with the saved
-`fetch_mode`. Invalid modes return `400`; sources outside the active workspace
-return `404`. The last scrape status clears when settings are saved, and the
-new mode applies on the next scrape.
+Both fields are optional, but at least one must be supplied. Accepted
+`fetch_mode` values are `http` and `browser`. `auto_tag_ids` must be an array of
+positive tag IDs belonging to the workspace. Omitted fields preserve existing
+settings; `"auto_tag_ids": []` disables future automatic assignments.
+
+Success returns `200` with the submitted settings. Invalid modes, malformed IDs,
+and unavailable or foreign tags return `400`; sources outside the active workspace
+return `404`. Settings are saved atomically. Changing the fetch mode clears the
+last scrape status and applies on the next scrape; tag-only updates preserve it.
+
+Tag updates do not change existing proxy assignments. Future accepted scrape
+results use the current configuration when saved, including for existing,
+paused, or archived managed proxies. Tags are additive and may be restored after
+manual removal if another scrape observes the route while the rule is configured.
+Clearing or changing the selection never removes existing assignments. Deleting
+a tag removes its source-rule references and assignments without recreating it.
 
 Source list and detail responses include `fetch_mode`, `last_scraped_at`,
 `last_scrape_status`, `last_scrape_error`, and `last_scrape_proxy_count`.

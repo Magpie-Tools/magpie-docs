@@ -79,8 +79,13 @@ Use **Manage tags** from the proxy list, proxy detail, scrape-source proxy list,
 - inline from a scrape source's proxy list
 - from an individual proxy's detail page
 - to every proxy in an import
+- automatically to proxies found in future scrapes, through a source's **Automatic tags** setting
 
-Deleting a tag removes that tag from every proxy without deleting the proxies themselves.
+Source automatic tags add missing tags and keep existing classifications. A
+later scrape may restore a configured tag you removed manually. Clear that
+source's selection to stop future assignments; existing proxy tags remain.
+
+Deleting a tag removes that tag from every proxy and source rule without deleting the proxies themselves.
 
 ## Proxy detail and stats
 

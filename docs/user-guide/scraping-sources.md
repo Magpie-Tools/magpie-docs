@@ -1,6 +1,6 @@
 # Scraping Sources
 
-Scrape sources are websites Magpie crawls to discover proxies.
+Scrape sources are webpage URLs Magpie fetches to discover proxies.
 
 ## Manage sources
 
@@ -9,6 +9,7 @@ Scrape sources are websites Magpie crawls to discover proxies.
 - `POST /api/scrapingSources`
 - `DELETE /api/scrapingSources`
 - `GET /api/scrapingSources/{id}`
+- `PATCH /api/scrapingSources/{id}`
 - `GET /api/scrapingSources/{id}/proxies`
 
 ## Table actions
@@ -44,9 +45,32 @@ proxy tags and lets operators change them inline, search by tag name, and filter
 by one or more tags. Selecting several tags matches proxies with any selected
 tag.
 
-Tags belong to the workspace's managed proxy, not to the scrape source.
-Automatic scraping does not assign tags, and changing a tag from this table also
+Tags belong to the workspace's managed proxy. Changing a tag from this table also
 changes what every member sees in the main proxy list and proxy detail.
+
+## Automatically tag proxies from a source
+
+Choose **Automatic tags** when adding sources or on a source's detail page.
+You can select several existing workspace tags or open **Manage tags** to create
+them. Operators, admins, and owners can change this setting; viewers can read it.
+
+Future scrapes add any missing selected tags to every accepted proxy they save,
+including proxies already managed by the workspace. Existing manual tags and
+tags from other sources stay in place. Saving the setting does not tag historical
+source results. Paused proxies receive tags too, and tagging does not require a
+successful health check or change a proxy's lifecycle state.
+
+If you manually remove a configured tag from a proxy, a later scrape that finds
+that proxy adds it again. Clear the source's automatic tag selection to stop
+future assignments. Clearing or changing the selection, or removing the source,
+leaves existing proxy tags in place. Deleting a tag removes it from proxies and
+source rules; scrapes do not recreate it.
+
+When adding several sources at once, all newly added sources receive the same
+selection. Re-adding an existing source preserves its settings. Each workspace
+has its own source rules, even when workspaces use the same URL. Results use the
+current saved selection when processed, including changes made during a running
+scrape.
 
 ## Robots check
 
