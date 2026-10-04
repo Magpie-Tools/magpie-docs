@@ -38,6 +38,24 @@ Side effects when config changes:
 
 Requires admin role. Returns full current global config.
 
+## `POST /api/global/proxies/requeue` (admin)
+
+Requires admin role. Redistributes waiting proxy checks across the current
+check interval. Checks already in progress retain their leases and finish
+normally. Expired leases remain available for workers to recover.
+
+Success (`200`):
+
+```json
+{
+  "message": "All queued proxies were requeued successfully",
+  "proxy_count": 42
+}
+```
+
+`proxy_count` is the number of waiting queue members actually rescheduled.
+It excludes leased members, including leases claimed during the operation.
+
 ## `GET /api/getDashboardInfo`
 
 Requires viewer or higher. Returns dashboard metrics for the selected workspace.

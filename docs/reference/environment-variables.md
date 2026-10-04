@@ -200,6 +200,28 @@ Statistics ingestion/stream/retention controls include:
 - `PROXY_STATISTICS_TENANT_OVERLOAD_POLICIES`
 - `PROXY_STATISTICS_PRODUCER_BLOCK_TIMEOUT_MS`
 
+Reputation refresh uses a durable PostgreSQL queue shared across backend
+instances. These settings apply per instance:
+
+| Variable | Default | Meaning |
+| --- | ---: | --- |
+| `PROXY_REPUTATION_REFRESH_WORKERS` | `4` | Concurrent refresh workers, clamped to 1 through 32. |
+| `PROXY_REPUTATION_REFRESH_BATCH_SIZE` | `1000` | Routes claimed per worker batch, clamped to 1 through 5000. |
+| `PROXY_REPUTATION_REFRESH_INTERVAL_SECONDS` | `1` | Idle or error retry delay. Workers continue immediately while work remains. |
+| `SCRAPE_SOURCE_STATS_REFRESH_INTERVAL_SECONDS` | `30` | Interval for coalesced source health counts. Proxy-list projection keeps its own refresh interval. |
+| `SCRAPE_SOURCE_STATS_REFRESH_BATCH_SIZE` | `100` | Source/workspace pairs refreshed per interval, clamped to 1 through 1000. |
+
+Monitor `magpie_proxy_reputation_refresh_pending` and
+`magpie_proxy_reputation_refresh_oldest_age_seconds` to check whether refresh
+workers keep up with ingestion. These gauges describe the shared database
+backlog. Do not sum them across backend instances.
+
+Statistics stream replays use the stream key and message ID as a durable event
+identity. Run `--migrate-only` before starting updated backends to create
+`proxy_statistic_events` and `proxy_reputation_refreshes`. Event identities
+survive history retention and require storage capacity separate from retained
+history. The in-memory fallback has no durable stream identity.
+
 History/snapshot retention controls:
 
 - `PROXY_HISTORY_RETENTION_DAYS`

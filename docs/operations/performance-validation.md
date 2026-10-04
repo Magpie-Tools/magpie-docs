@@ -40,6 +40,63 @@ TCP keep-alive now starts probing after `30s` of idle time, previously `5m`.
 
 ## Test matrix
 
+Statistics replay protection and persisted reputation refresh require the
+`proxy_statistic_events` and `proxy_reputation_refreshes` tables. Run the
+backend's `--migrate-only` job before starting upgraded backends, and stop
+previous checker instances during the upgrade so all workers use lease renewal
+and fenced completion.
+The updated queue marks leases in scheduling scores. Previous checker versions
+cannot safely share the queue with new workers. Bulk requeue preserves active
+checks; expired leases remain available for normal recovery. Imports retain a
+route in its owned shard until its worker completes.
+Old and current hashes for the same route also reconcile atomically when a
+worker encounters the old alias. The worker merges workspace owners, consumes
+the alias, and preserves an active current lease without starting another
+check. No queue flush or additional database migration is required for this
+reconciliation. Keep the encryption key stable and the shard count consistent
+across instances.
+
+Set `MAGPIE_TEST_POSTGRES_DSN` and `MAGPIE_TEST_REDIS_URL` to disposable services
+when running the backend regression suites. They cover partial pending stream
+recovery, duplicate usage accounting, rotator counts at 65,536 candidates,
+usage writes with one million routes, uptime selection with unrelated history,
+and source count coalescing.
+Set `MAGPIE_TEST_QUEUE_REDIS_URL` to a separate empty disposable Redis database
+to exercise queue races against real Redis. That fixture flushes its database.
+These regressions include bulk requeue during an active check, imports from
+legacy and other configured shards, and statistics cancellation followed by
+replay of a 5,001-event batch. Unset `REDIS_URL` and `redisUrl` during full suites
+so connection-failure fixtures can override their addresses.
+Alias migration regressions cover concurrent aliases, current claims and
+imports during migration preparation, stale source leases, and expired current
+leases with plaintext and encrypted compatibility payloads. The separate
+`BenchmarkProxyQueueLegacyRekey` benchmark measures migration with eight
+existing owners and one added owner. Compare its cost separately from ordinary
+plaintext queue throughput.
+
+On shutdown, statistics stream workers leave unacknowledged entries pending for
+recovery. The ledger prevents committed entries from counting twice. Pending
+entries from another consumer become recoverable after at least one minute idle.
+The volatile in-memory fallback makes one final persistence attempt bounded by
+the 30-second database timeout; a failed final attempt has no durable recovery.
+
+Reputation workers drain persisted requests continuously. Watch
+`magpie_proxy_reputation_refresh_pending` and
+`magpie_proxy_reputation_refresh_oldest_age_seconds` during sustained tests.
+Tune worker count and batch size against database load. The defaults do not
+establish capacity for a tens-of-millions installation.
+
+Source health counts update in a separate coalescing loop, every 30 seconds
+for up to 100 source/workspace pairs by default. Large backlogs require more
+time or an adjusted batch size. Proxy-list health keeps its own refresh loop.
+Source notification work no longer recounts the pool after every route update;
+the coalesced refresh still aggregates the affected source pool.
+
+The statistics event ledger retains one identity per accepted stream event
+after history expires. Include this table and its primary key index in storage
+growth measurements. Preserve identities when pruning history so delayed
+replays cannot increment counters again.
+
 | Suite | Script | Default duration | Primary focus | Gate criteria |
 | --- | --- | --- | --- | --- |
 | Read-heavy | `scripts/perf/k6/read-path.js` | `30m` | proxy pages, filters, dashboard, GraphQL, proxy statistics reads | per-scenario thresholds in script (p95/p99 + error rate) |
