@@ -90,6 +90,7 @@ Response:
       "country": "N/A",
       "anonymity_level": "elite",
       "alive": true,
+      "health_known": true,
       "latest_check": "2026-02-12T10:00:00Z",
       "state": "active",
       "tags": [
@@ -105,6 +106,12 @@ Response:
 ```
 
 The `ip` response property keeps its existing name for API compatibility. Its value is the canonical route host, which may be a DNS hostname, IPv4 address, or IPv6 address. Country, estimated type, AbuseIPDB data, and IP blacklist matching are unavailable for hostname routes because Magpie does not resolve changing gateway answers into stored identity data.
+
+Proxy list rows include `health_known`. When false, the current effective
+checker settings have no applicable evidence; `alive: false` then means unknown
+rather than a confirmed failure. Health filters exclude unknown proxies.
+Settings changes, empty protocol selections, and pending runtime refreshes can
+make health unknown.
 
 ## `GET /api/proxyFilters`
 
@@ -190,7 +197,9 @@ colors, or path IDs return `400`.
 
 Requires viewer or higher. Returns proxy detail including latest statistic,
 reputation breakdown, the selected workspace's `tags`, and its `state` and
-optional `pause_reason`.
+optional `pause_reason`. Its `alive` field is `true`, `false`, or `null` for
+current alive, dead, or unknown health. `latest_statistic` uses only evidence
+matching this workspace's current effective checker settings.
 
 ## `PUT /api/proxies/{id}/lifecycle`
 
@@ -224,6 +233,11 @@ Response:
       "attempt": 1,
       "response_time": 190,
       "protocol": "http",
+      "transport": "tcp",
+      "timeout": 7500,
+      "retries": 2,
+      "config_key": "32bd6c...",
+      "current": true,
       "anonymity_level": "elite",
       "judge": "https://judge.example",
       "created_at": "2026-02-12T09:58:00Z"
@@ -231,6 +245,12 @@ Response:
   ]
 }
 ```
+
+Attributed history shows this workspace's verdict, transport, timeout, retries,
+and configuration key. `current` indicates that the configuration still
+matches an enabled current check; it does not mean this is the latest event.
+Obsolete and legacy rows remain historical. Legacy rows lack configuration
+attribution and never qualify as current after snapshot initialization.
 
 ## `GET /api/proxies/{id}/statistics/{statisticId}`
 

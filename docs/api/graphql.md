@@ -86,6 +86,10 @@ query DashboardData($proxyPage: Int!) {
 ```graphql
 mutation Update($input: UpdateUserSettingsInput!) {
   updateUserSettings(input: $input) {
+    checkerSettings {
+      defaults { protocols transport timeout retries }
+      rules { tagId mode protocols transport timeout retries }
+    }
     httpProtocol
     httpsProtocol
     socks4Protocol
@@ -125,6 +129,40 @@ arrays. Omitted fields retain their current values.
 
 The mutation saves settings for the selected workspace, despite the legacy
 `updateUserSettings` name.
+
+Proxy list items expose `healthKnown`. When false, `alive: false` means the
+current configuration has no applicable evidence, not a confirmed failure.
+
+## Tag checker settings
+
+`UpdateUserSettingsInput.checkerSettings` accepts the same behavior as REST,
+using lists for protocols and GraphQL IDs for tags:
+
+```json
+{
+  "input": {
+    "checkerSettings": {
+      "defaults": {"protocols": ["socks5"], "transport": "tcp", "timeout": 7500, "retries": 2},
+      "rules": [
+        {"tagId": "42", "mode": "add", "protocols": ["http"], "timeout": 5000, "retries": 0}
+      ]
+    }
+  }
+}
+```
+
+Providing this field saves Default and rules atomically. Default requires a
+protocol-name list and shared transport, timeout, and retries. The rules list is
+highest priority first. Omitted or `null` rule fields inherit independently.
+Explicit fields apply to every enabled protocol. Remove rules contain only tag
+identity, mode, and protocol names. Timeouts accept 1–65535 ms and retries accept
+0–255. Validation, including all reachable tag combinations, and workspace tag
+ownership checks are shared with REST. Omitting `checkerSettings` preserves rules.
+
+`viewer.settings.checkerSettings` and the settings mutation response expose the
+same shared profile objects. See
+[Default and tag settings](../user-guide/checker-and-judges.md#default-and-tag-settings)
+for merging, inheritance, and health behavior.
 
 ## Query guardrails
 

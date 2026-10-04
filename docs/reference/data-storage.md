@@ -26,6 +26,31 @@ Tag catalogs and assignments are scoped to a workspace and managed proxy. Tags
 are not copied into Redis queue payloads and do not add work to the steady-state
 checker loop.
 
+Workspace checker defaults and ordered tag rules are stored as JSON in
+`workspaces.checker_config`. `proxy_checker_plans` contains only protocol keys
+that differ from the workspace Default for a tagged managed proxy. Startup and
+settings/tag mutations compile immutable runtime snapshots; workers resolve
+checks from memory without loading credentials or tag assignments from the
+database.
+
+Workspace revision counters and `checker_proxy_changes` track which routes need
+recompilation. The journal coalesces edits per workspace and route, letting
+unchanged cached reconciliation skip assignment and projection reads. Removed
+memberships retain temporary records so missed notifications cannot restore old
+tag settings after a reimport. Retention maintenance expires committed removal
+records after 24 hours and advances a full-refresh watermark before discarding
+them. Workspace deletion removes its journal. The active recent-checks index
+selects dashboard candidates before evidence aggregation.
+
+Physical check history remains one row per event. Its `check_evidence` records
+the verdict and configuration key for each participating workspace, together
+with transport and budget metadata. `proxy_latest_statistics` is keyed by
+workspace, configuration, route, and protocol. Current-health reads accept only
+keys matching the current effective settings. Historical results retain their
+original attribution, and retention removes obsolete latest pointers outside
+checker workers. A pending projection suppresses current health until refresh
+succeeds.
+
 `scrape_source_tags` stores each workspace source subscription's automatic tag
 selection. Its rules reference the existing workspace tag catalog. Source or tag
 deletion removes the corresponding rule rows. Scraping adds ordinary managed

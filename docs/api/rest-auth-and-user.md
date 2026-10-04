@@ -203,6 +203,10 @@ Response shape:
 
 ```json
 {
+  "checker_settings": {
+    "defaults": {"protocols": ["http", "https"], "transport": "tcp", "timeout": 7500, "retries": 2},
+    "rules": [{"tag_id": 42, "mode": "add", "protocols": ["http"], "timeout": 5000, "retries": 0}]
+  },
   "http_protocol": true,
   "https_protocol": true,
   "socks4_protocol": false,
@@ -228,7 +232,43 @@ Requires operator or higher in the selected workspace. Saves workspace
 protocol/checker settings and judges. Column preferences are stored for the
 authenticated user in that workspace.
 
-Request uses the same fields as `GET /api/user/settings`.
+Request uses the same fields as `GET /api/user/settings`. Omitted fields retain
+their stored values. Providing `checker_settings` atomically replaces Default
+and the complete ordered rule list. `rules[0]` has highest priority and applies
+last. Tag IDs must belong to the selected workspace. Duplicate tags or protocols,
+invalid modes, budgets, or transport combinations return `400` without a partial
+save.
+
+Send only fields edited by the current action. A column save can send
+`{"proxy_list_columns": ["ip_port", "tags", "country"]}`; a judge save can send
+only `{"judges": [...]}`. Include `checker_settings` only when explicitly saving
+Default and tag rules. Resending an older settings snapshot can overwrite newer
+edits or fail validation after a referenced tag has been deleted.
+Column-only saves update the member's preferences without triggering checker
+reconciliation or changing workspace checker revisions.
+
+`defaults` contains `protocols`, a list of enabled protocol names, and the required
+shared `transport`, `timeout` of 1–65535 ms, and `retries` of 0–255. Protocol names
+are `http`, `https`, `socks4`, and `socks5`. Supported transports are `tcp`, `quic`,
+and `http3`. All enabled protocols use the same effective transport and budget.
+
+Rules use `replace`, `add`, or `remove`. Add and Replace accept optional shared
+transport, timeout, and retry fields. Omitted or `null` fields inherit from
+Default and earlier matching rules. Explicit fields update all enabled protocols.
+Zero retries disables retries. Remove only accepts a protocol selection, such
+as `{"tag_id": 42, "mode": "remove", "protocols": ["http"]}`. An empty Add
+selection can change only the shared fields.
+
+Validation considers every reachable tag combination. SOCKS requires TCP and
+cannot inherit QUIC or HTTP/3 through another tag. Empty protocol sets are valid.
+
+Older clients that omit `checker_settings` preserve tag rules. Legacy scalar
+fields edit Default's shared values, and protocol booleans edit its selection.
+Earlier per-protocol draft JSON remains readable. Conversion chooses the first
+enabled Default protocol and each rule's first explicit field in HTTP, HTTPS,
+SOCKS4, SOCKS5 order. If the converted shared transports would be incompatible
+with SOCKS, they use TCP. New responses and writes use the shared profile format. See
+[Default and tag settings](../user-guide/checker-and-judges.md#default-and-tag-settings).
 
 `failure_action` accepts `pause` or `delete` and defaults to `pause`. If omitted
 or empty, the stored action is preserved for compatibility with older clients.

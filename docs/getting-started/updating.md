@@ -69,3 +69,40 @@ that omit `X-Workspace-ID` continue through the migrated default workspace.
 Do not run an older backend against the migrated database. There is no in-place
 downgrade because ownership columns and constraints have changed; restore the
 coordinated PostgreSQL and Redis backups to roll back.
+
+### Tag checker settings migration
+
+Update the frontend and every backend instance together. Stop all backend
+instances, run `--migrate-only`, and start the new images after it succeeds.
+This release adds workspace protocol defaults and ordered tag rules, a sparse
+projection for tagged proxy checks, and workspace/configuration attribution to
+latest statistics. The latest-statistics primary key changes; older workers
+must not write to the migrated database.
+
+Existing checker values become shared Default settings with no tag rules.
+Earlier per-protocol draft profiles remain readable and convert to shared values
+using the first enabled Default protocol and first explicit rule fields in
+HTTP, HTTPS, SOCKS4, SOCKS5 order. If converted transports are incompatible with
+SOCKS, conversion uses TCP. Update the frontend and backend together. Legacy statistics remain available as history. Their
+transport and settings cannot be reliably attributed, so current health starts
+unknown until fresh matching checks complete. TCP rotators also wait for current
+TCP evidence. Existing failure streaks are retained.
+
+No new environment variables are needed. Keep `PROXY_ENCRYPTION_KEY` stable and
+retain the coordinated backups for rollback. Redis queue payloads and ordinary
+requeue scheduling keep their existing format and credential policy.
+
+Checker projection refreshes reconcile committed keys and tag overrides across
+backend instances. Unrelated classification tags do not refresh workspace health,
+and checker tag edits refresh only affected proxy and source summaries. Dashboard
+caches verify the committed checker generation before serving health. Unchanged
+reconciliation skips route reads; column-only saves skip checker refresh. Recent
+checks select indexed candidates before fetching their evidence.
+
+Run the updated migration even when upgrading an earlier tag-settings build. It
+adds workspace revision counters, a coalesced per-route change journal, and an
+index for active recent-check candidates. These changes require no new environment
+settings and add no database queries to individual checker runs.
+The journal retains temporary removal records so a reimported proxy does not
+reuse settings from its previous tag membership. Retention maintenance expires
+committed removal records after 24 hours; workspace deletion removes its journal.
