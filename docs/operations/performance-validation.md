@@ -67,6 +67,24 @@ These regressions include bulk requeue during an active check, imports from
 legacy and other configured shards, and statistics cancellation followed by
 replay of a 5,001-event batch. Unset `REDIS_URL` and `redisUrl` during full suites
 so connection-failure fixtures can override their addresses.
+
+Bulk proxy deletion has a separate PostgreSQL regression. From `magpie-backend`,
+using an isolated test database:
+
+```sh
+MAGPIE_TEST_BULK_DELETE_ROUTES=70000 \
+  go test ./internal/database -run '^TestBulkProxyDeletion' -count=1 -v -timeout=10m
+```
+
+Keep `MAGPIE_TEST_POSTGRES_DSN` set for this command. The fixture includes
+41 overlapping sources, four checker rules, tagged overrides, and shared route
+ownership. It checks that source health refreshes once, orphan lookups stay
+within PostgreSQL's parameter limit, and counts remain correct after a later
+batch fails. Measure endpoint completion under normal checker and scraper load
+as well; this fixture measures database work and excludes Redis cleanup and
+live checker-snapshot refresh. This correction requires no schema or
+configuration change.
+
 Alias migration regressions cover concurrent aliases, current claims and
 imports during migration preparation, stale source leases, and expired current
 leases with plaintext and encrypted compatibility payloads. The separate

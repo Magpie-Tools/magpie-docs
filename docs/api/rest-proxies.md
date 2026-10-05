@@ -271,6 +271,10 @@ Requires operator or higher. Deletes selected workspace associations and
 supports two body modes. A globally shared route remains stored while any other
 workspace manages it.
 
+Bulk deletion runs in batches. Affected scrape-source counts and health refresh
+once after the committed batches. If a later batch fails, earlier deletions
+remain committed; refresh the proxy list before retrying.
+
 Mode A: selected IDs array.
 
 ```json
