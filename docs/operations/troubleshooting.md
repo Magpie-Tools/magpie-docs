@@ -123,6 +123,25 @@ The selected workspace has reached its finite active-route capacity. Pause or
 archive another managed proxy before activating this one. The blocked proxy
 remains stored.
 
+## The same proxy is checked every few seconds
+
+Check the global checker timer. Several protocol results can appear together
+within one cycle, but repeated successful results for the same protocol every
+second indicate that the route is being scheduled too soon. Tag checker rules
+change the checks in a cycle and do not override its interval.
+
+Older backend builds published a one-second placeholder interval to Redis during
+package initialization, before loading settings. Starting a test process,
+migration, or replica against the same Redis could overwrite the running
+checker's interval. A full notification channel could also drop the configured
+interval update.
+
+Update and restart every backend replica to restore the interval from loaded
+settings. The fix starts interval synchronization after settings load and keeps
+the newest pending notification. Routes already due may run once before their
+normal requeue uses the restored interval. Use disposable Redis and PostgreSQL
+instances for tests and benchmarks.
+
 ## Scrape source rejected
 
 Possible causes:

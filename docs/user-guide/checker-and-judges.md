@@ -3,6 +3,12 @@
 Checker behavior combines global instance settings and settings owned by the
 active workspace.
 
+The global checker timer sets the interval between completed check cycles for a
+proxy route. Default and tag profiles choose which checks run within that cycle;
+they do not shorten the timer. Each enabled protocol can produce its own history
+entry, so several entries close together can belong to one cycle. After the cycle
+finishes, the route waits the configured interval before its next scheduled check.
+
 ## Workspace settings
 
 Workspace settings include:
