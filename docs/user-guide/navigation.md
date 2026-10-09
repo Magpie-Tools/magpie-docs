@@ -15,6 +15,7 @@ The Angular app routes map to these core views:
 - `/invitations`: pending workspace invitations for the signed-in account
 - `/account`: account and password actions
 - `/notifications`: release/build notifications
+- `/alerts`: workspace and rotator rules, delivery destinations, and incident history
 
 Admin-only routes:
 
