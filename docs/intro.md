@@ -22,7 +22,7 @@ maintained across the repositories in the
 
 ## System at a glance
 
-- [`magpie-backend`](https://github.com/Magpie-Tools/magpie-backend): Go `1.27.1` API + worker routines + rotating proxy listeners
+- [`magpie-backend`](https://github.com/Magpie-Tools/magpie-backend): Go `1.27.2` API + worker routines + rotating proxy listeners
 - [`magpie-frontend`](https://github.com/Magpie-Tools/magpie-frontend): Angular `21.1` dashboard UI
 - `postgres`: persistent relational storage
 - `redis`: queueing, coordination, and distributed routines

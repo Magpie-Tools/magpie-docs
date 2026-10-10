@@ -11,7 +11,7 @@ The default stack includes:
 
 Current build/runtime status:
 
-- backend image is built from the Go `1.27.1` codebase
+- backend image is built from the Go `1.27.2` codebase
 - frontend image builds the Angular `21.1` app and serves the static output via nginx
 
 Rotating proxy listener ports are also mapped by default:

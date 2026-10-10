@@ -20,7 +20,7 @@ separate deployment profile.
 
 ## Go and dependency upgrades
 
-The backend uses Go `1.27.1` in its module, CI, and Docker builder. Backend CI
+The backend uses Go `1.27.2` in its module, CI, and Docker builder. Backend CI
 runs tests, race tests, vet, build, a vulnerability scan, and the PostgreSQL
 integration tests.
 
