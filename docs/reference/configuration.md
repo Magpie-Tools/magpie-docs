@@ -44,6 +44,10 @@ Memberships do not contribute or pool this allowance. If
 `proxy_limits.exclude_admins` applies when an entitlement is created, that
 workspace is seeded as unlimited.
 
+This allowance limits active routes. It does not cap stored proxies. Scrape
+sources and manual imports retain overflow as paused routes, so the total
+proxy count can exceed the active-route limit.
+
 Existing workspace subscription rows are entitlement snapshots. Editing the
 global configuration does not turn member allowances into capacity; future
 billing and capacity administration should update the workspace entitlement.

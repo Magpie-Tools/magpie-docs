@@ -56,7 +56,9 @@ Managed proxies have three lifecycle states:
 - **Paused**: stored, but not checked or available to rotators; does not consume active capacity.
 - **Archived**: retained for later recovery, but not checked or available to rotators; does not consume active capacity.
 
-When an import exceeds a finite capacity limit, Magpie stores the overflow routes as paused with a capacity reason. Activating another route is rejected until capacity is available. A limit change or downgrade never deletes routes; startup reconciliation pauses the newest active overflow routes.
+When scrape sources or manual imports exceed a finite capacity limit, Magpie stores the overflow routes as paused with a capacity reason. Activating another route is rejected until capacity is available. A limit change or downgrade never deletes routes; startup reconciliation pauses the newest active overflow routes.
+
+The proxy list and dashboard total include active, paused, and archived proxies. For example, a workspace with a 20,000 active-route limit can store 70,000 scraped proxies, with 20,000 active and 50,000 paused for capacity. Use the workspace page to compare active routes with the limit, or filter the proxy list by lifecycle state.
 
 The workspace page shows active and stored route counts together with the current entitlement snapshot, warns above 80%, and explains when the activation limit has been reached. Self-hosted installations are unlimited by default. If the legacy global proxy limit is enabled, Magpie uses it to seed finite capacity for newly created and migrated workspaces; administrator exclusions still apply when the entitlement is created.
 
