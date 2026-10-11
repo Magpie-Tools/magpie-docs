@@ -21,6 +21,8 @@ Production mode can be inferred from any of:
 Values `prod` or `production` are treated as production.
 
 - `STRICT_SECRET_VALIDATION`: override strict startup validation for `JWT_SECRET` and `PROXY_ENCRYPTION_KEY`.
+- `DEVELOPMENT_FIXTURES` (default `false`): local development mode that keeps the API, checker settings, and dashboard cache available while skipping autonomous jobs and rotating listeners. API-created rotators are saved without opening TCP or UDP listeners. Restart with fixture mode disabled to activate them. Use with the [repeatable test dataset](../getting-started/local-development.md#restore-development-test-data) to preserve synthetic results. Production mode rejects `true`.
+- `MAGPIE_DEV_PASSWORD`: password used only by `go run ./cmd/seed-dev-data --reset` when it creates missing development accounts. Existing passwords remain unchanged. This variable is not needed by the backend server.
 
 ## API hardening
 
