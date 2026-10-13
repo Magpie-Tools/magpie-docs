@@ -110,10 +110,12 @@ time or an adjusted batch size. Proxy-list health keeps its own refresh loop.
 Source notification work no longer recounts the pool after every route update;
 the coalesced refresh still aggregates the affected source pool.
 
-The statistics event ledger retains one identity per accepted stream event
-after history expires. Include this table and its primary key index in storage
-growth measurements. Preserve identities when pruning history so delayed
-replays cannot increment counters again.
+Ledger maintenance persists a replay floor before retiring event identities.
+Measure `proxy_statistic_events` and its indexes, `proxy_statistic_streams`, and
+`proxy_check_totals`. Monitor pending age and maintenance progress; an old pending
+event delays retirement. Accelerated regressions do not establish stability over
+months. Sustained soaks should include dependency outages, import/delete churn,
+month boundaries, and idle tunnels.
 
 | Suite | Script | Default duration | Primary focus | Gate criteria |
 | --- | --- | --- | --- | --- |

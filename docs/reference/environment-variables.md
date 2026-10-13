@@ -97,7 +97,7 @@ Durable email outbox worker:
 - `EMAIL_OUTBOX_BATCH_SIZE` (default `10`)
 - `EMAIL_PROCESSING_TIMEOUT`: duration string for stale in-flight email recovery
 - `EMAIL_PROCESSING_TIMEOUT_SECONDS`: integer fallback processing timeout
-- `EMAIL_OUTBOX_RETENTION_HOURS` (default `24`): how long sent outbox rows are kept before cleanup
+- `EMAIL_OUTBOX_RETENTION_HOURS` (default `24`): retain sent rows from `sent_at` and abandoned rows from their last status update.
 - `EMAIL_RETRY_BASE_SECONDS` (default `5`): exponential backoff base for email retries
 - `EMAIL_MAX_ATTEMPTS` (default `4`): max delivery attempts before abandoning an outbox row
 
@@ -156,6 +156,7 @@ In default Docker Compose single-mode deployment, backend points to `redis://red
 - `ROTATING_PROXY_HANDSHAKE_TIMEOUT_MS`
 - `ROTATING_PROXY_MAX_REQUEST_BODY_BYTES`
 - `ROTATING_PROXY_SOCKS_MAX_CONCURRENT_CONNECTIONS`
+- `ROTATING_PROXY_MAX_CONCURRENT_TUNNELS` (default `1024`): CONNECT/SOCKS clients per listener, including handshakes. The SOCKS worker limit also applies.
 
 Multi-instance identity:
 
@@ -170,11 +171,21 @@ Optional HTTP/3 TLS files for rotating listeners:
 - `ROTATING_PROXY_HTTP3_TLS_CERT_FILE`
 - `ROTATING_PROXY_HTTP3_TLS_KEY_FILE`
 
+Each TLS handshake reloads changed valid files. Invalid or mismatched replacements
+preserve the last valid certificate.
+
 ## Queue and startup toggles
 
 - `PROXY_QUEUE_SHARDS`
 - `SCRAPE_QUEUE_SHARDS`
 - `STARTUP_QUEUE_BOOTSTRAP_ASYNC`
+
+Queue marker checks run every ten seconds. Missing state triggers PostgreSQL
+reconstruction; readiness is HTTP 503 after detection until completion.
+
+- `PROXY_ORPHAN_CLEAN_INTERVAL` / `PROXY_ORPHAN_CLEAN_INTERVAL_MINUTES` (default `60` minutes): delay after completed cleanup passes.
+- `PROXY_ORPHAN_CLEAN_MAX_RUN_DURATION` (default `45s`): pass budget; drain batches of 5,000 distinct route IDs per table.
+- `PROXY_ORPHAN_CLEAN_RETRY_INTERVAL` (default `1m`): delay after failed or interrupted passes, capped at the normal interval. Committed deletions are retained.
 
 ## Proxy statistics and timeline maintenance
 
@@ -193,6 +204,9 @@ Statistics ingestion/stream/retention controls include:
 - `PROXY_STATISTICS_AUTO_PARTITION_MIGRATION`
 - `PROXY_STATISTICS_PARTITION_PRECREATE_MONTHS`
 - `PROXY_STATISTICS_PARTITION_PAST_MONTHS`
+- `PROXY_DAILY_CHECK_RETENTION_DAYS` (default `30`, minimum `8`): older UTC daily counters compact into one lifetime total per route. All-time dashboard counts survive compaction.
+- `PROXY_STATISTICS_LEDGER_RETENTION_BATCH_SIZE` (default `50000`): identities retired per database batch, after acknowledged stream progress is recorded durably.
+- `PROXY_STATISTICS_LEDGER_RETENTION_MAX_BATCHES` (default `240`): maximum ledger batches per pass. Passes run each minute with a 45-second budget.
 - `PROXY_STATISTICS_INGEST_WORKERS`
 - `PROXY_STATISTICS_REDIS_STREAM_ENABLED`
 - `PROXY_STATISTICS_REDIS_STREAM_KEY`

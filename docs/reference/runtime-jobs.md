@@ -26,10 +26,29 @@ Magpie starts several long-running routines on backend startup.
 
 Some routines are executed with leader-election semantics using Redis locks to avoid duplicate execution across instances.
 
+Leadership, configuration subscriptions, checker settings, and stream startup
+retry when Redis returns. Lost consumer groups restart with database replay
+protection. Queue marker checks run every ten seconds; missing queues rebuild
+from PostgreSQL under shared leadership, with readiness at 503 after detection.
+
+Statistics maintenance precreates months even when migrations or history retention
+are disabled, moves affected DEFAULT rows, and compacts older daily counts into
+lifetime totals. Stream maintenance retires acknowledged identities behind a
+durable replay floor. Orphan cleanup drains counter tables hourly with a 45-second
+budget and retries failures or interruptions after one minute by default.
+
+Monitor `magpie_leader_job_active`, `magpie_maintenance_last_success_timestamp_seconds`,
+`magpie_maintenance_failures_total`, and `magpie_statistics_replay_floor_timestamp_seconds`.
+An old pending event delays ledger retirement.
+
+Minute sweeps expire DNS/robots caches, bounded to 20,000/2,000 entries. Public-IP
+lookup repeats every 15 minutes after success. Rotators close client/upstream
+sockets when stopped and reload changed valid TLS certificates on handshake.
+
 The durable email outbox is split across two coordination models:
 
 - Every backend instance runs the email delivery worker and can poll, claim, and send queued outbox rows in parallel.
-- Outbox housekeeping remains leader-coordinated to avoid duplicate stale-message recovery and sent-row cleanup work.
+- Outbox housekeeping remains leader-coordinated to avoid duplicate stale-message recovery and terminal-row cleanup work. Both sent and abandoned messages expire.
 
 ## Timers
 

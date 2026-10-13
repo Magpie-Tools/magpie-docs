@@ -51,6 +51,13 @@ original attribution, and retention removes obsolete latest pointers outside
 checker workers. A pending projection suppresses current health until refresh
 succeeds.
 
+Runtime maintenance precreates monthly partitions. `proxy_statistic_streams`
+stores replay floors so retired event identities still reject historical replays;
+restore PostgreSQL and Redis from coordinated backups. Older `proxy_daily_checks`
+compact into one `proxy_check_totals` row per route, preserving all-time counts
+and preventing repeated backfill. Orphan cleanup drains daily counts, totals, and
+backfill markers in batches of 5,000 route IDs per table.
+
 `scrape_source_tags` stores each workspace source subscription's automatic tag
 selection. Its rules reference the existing workspace tag catalog. Source or tag
 deletion removes the corresponding rule rows. Scraping adds ordinary managed
