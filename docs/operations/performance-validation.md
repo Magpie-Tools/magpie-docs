@@ -92,7 +92,9 @@ leases with plaintext and encrypted compatibility payloads. The separate
 existing owners and one added owner. Compare its cost separately from ordinary
 plaintext queue throughput.
 
-On shutdown, statistics stream workers leave unacknowledged entries pending for
+On shutdown, the backend waits for producers to stop before canceling usage
+and statistics consumers, and keeps Redis open until their final work finishes.
+Statistics stream workers leave unacknowledged entries pending for
 recovery. The ledger prevents committed entries from counting twice. Pending
 entries from another consumer become recoverable after at least one minute idle.
 The volatile in-memory fallback makes one final persistence attempt bounded by
@@ -121,7 +123,7 @@ month boundaries, and idle tunnels.
 | --- | --- | --- | --- | --- |
 | Read-heavy | `scripts/perf/k6/read-path.js` | `30m` | proxy pages, filters, dashboard, GraphQL, proxy statistics reads | per-scenario thresholds in script (p95/p99 + error rate) |
 | Write-heavy | `scripts/perf/k6/write-path.js` | `30m` | sustained `POST /api/addProxies` ingestion | per-scenario thresholds in script (p95/p99 + error rate) |
-| Mixed soak | `scripts/perf/k6/mixed-soak.js` | `2h` (set to `24h`/`72h` for release proof) | long-running mixed reads + writes | per-scenario thresholds in script + growth/drop budgets below |
+| Mixed soak | `scripts/perf/k6/mixed-soak.js` | gate default `24h`; standalone script `2h` | long-running mixed reads + writes | per-scenario thresholds in script + growth/drop budgets below |
 | Growth budget | `scripts/perf/assert-snapshot-delta.sh` | N/A | queue and DB growth across test window | queue/db deltas within configured limits |
 | Drop budget | `scripts/perf/check-drop-budget.sh` | N/A | proxy statistics queue drop protection | `dropped_total` must be less than or equal to configured budget |
 
@@ -133,6 +135,11 @@ Run from repo root:
 cd scripts/perf
 ./run-gate.sh
 ```
+
+The default release gate runs 30-minute read and write suites plus a 24-hour
+mixed soak. It rejects shorter soaks, skipped drop checks and missing/empty log
+sources. For a short functional check, run `PERF_GATE_MODE=smoke ./run-gate.sh`.
+Smoke mode does not establish production capacity.
 
 For full soak proof:
 
@@ -194,4 +201,21 @@ Drop-budget log source can be controlled with:
 - `PERF_DROP_BUDGET_SOURCE=auto` (default)
 - `PERF_DROP_BUDGET_SOURCE=compose`
 - `PERF_DROP_BUDGET_SOURCE=file`
-- `PERF_DROP_BUDGET_SOURCE=skip`
+- `PERF_DROP_BUDGET_SOURCE=skip`, available only in smoke mode
+
+Snapshots sum the legacy queues and all supported shard names, proxy shards
+`0` through `127` and scrape shards `0` through `63`. This includes older shard
+layouts after a shard-count change. A short atomic aggregate makes exactly 194
+constant-time cardinality reads without scanning the Redis keyspace, so payload
+key count does not increase its Redis work. Keep these bounds aligned with the
+backend's supported limits. Statistics byte measurements include the partitioned parent,
+all descendant partitions and their indexes. Redis authentication is passed to
+the snapshot client. The gate saves start/end snapshots and JSON summaries for
+all k6 suites. Its log window starts before the first suite; retain backend logs
+for the complete run, including rotations.
+
+Record route count, tenant sharing, active checker/scraper load, hardware,
+retention settings and dependency versions with release evidence. Include
+outages, import/delete churn, month boundaries, idle tunnels and a backup
+restore exercise. The regression suites and a short smoke run do not replace a
+representative 24-to-72-hour soak or establish months of stability.

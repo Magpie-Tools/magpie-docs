@@ -9,7 +9,7 @@ Magpie uses JWT bearer tokens for API authentication.
 - Logout endpoint: `POST /api/logout` (requires auth; revokes current token)
 - JWTs contain `user_id`, `role`, `exp`, `iat`, and `jti` claims.
 - Signing algorithm: `HS256`
-- Secret source: `JWT_SECRET` (required)
+- Secret source: `JWT_SECRET`, or a generated key persisted in `/app/data/jwt_secret` when the variable is empty. Installers generate a unique secret in `.env`.
 - TTL source: `JWT_TTL_MINUTES` (default `10080`, range `15..10080` minutes)
 
 ## Authorization header

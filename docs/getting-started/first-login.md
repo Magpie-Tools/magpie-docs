@@ -8,13 +8,15 @@
 
 ## Production bootstrap behavior
 
-In production-oriented deployments, public registration is often disabled by default.
+Production mode and the production Compose overlay disable public registration
+and first-admin bootstrap by default.
 
 For controlled first-admin bootstrap windows:
 
-1. Set `ENABLE_PUBLIC_FIRST_ADMIN_BOOTSTRAP=true`.
-2. Call `POST /api/register`.
-3. After bootstrap, disable public registration (`DISABLE_PUBLIC_REGISTRATION=true`).
+1. Restrict frontend/API access to the administrator setting up the instance.
+2. Set `ENABLE_PUBLIC_FIRST_ADMIN_BOOTSTRAP=true` and recreate the backend.
+3. Call `POST /api/register` to create the first account.
+4. Set `ENABLE_PUBLIC_FIRST_ADMIN_BOOTSTRAP=false`, keep `DISABLE_PUBLIC_REGISTRATION=true`, and recreate the backend before opening access.
 
 ## Verify backend auth
 

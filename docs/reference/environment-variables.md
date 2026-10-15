@@ -3,7 +3,7 @@
 ## Core backend
 
 - `PROXY_ENCRYPTION_KEY`: required key for encrypted PostgreSQL proxy usernames and passwords and keyed route fingerprints. It also protects Redis queue credentials when optional queue encryption is enabled. It does not encrypt proxy hosts.
-- `JWT_SECRET`: required JWT signing key.
+- `JWT_SECRET`: optional signing key. Installers generate and save a unique key. When empty, the backend generates `/app/data/jwt_secret` with mode 0600 and reuses it across restarts. Set one shared explicit key for multiple instances. The old published Compose default is replaced automatically.
 - `JWT_TTL_MINUTES` (default `10080`, allowed `15..10080`): access token lifetime.
 - `LOG_LEVEL` (default `info`): backend logger level (`debug`, `info`, `warn`, `error`, `fatal`).
 - `BACKEND_PORT` (default `5656`): API listen port.
@@ -33,7 +33,10 @@ Values `prod` or `production` are treated as production.
 - `PROXY_EXPORT_TIMEOUT_SECONDS` (default `300`): total proxy export database and formatting time. The response write deadline adds 5 seconds so an error can be sent when no data has been written.
 - `EXPORT_PROXY_READ_TIMEOUT_SECONDS` (default `310`, frontend container): nginx timeout between reads from the proxy export endpoint, including the initial response. Keep this at least 10 seconds above `PROXY_EXPORT_TIMEOUT_SECONDS`. Compose passes both export settings from `.env`; recreate backend and frontend containers after changing them. Configure any external reverse proxy accordingly.
 - `SERVER_IDLE_TIMEOUT_SECONDS` (default `120`)
-- `SERVER_SHUTDOWN_TIMEOUT_SECONDS` (default `20`): graceful shutdown timeout used by the API server.
+- `SERVER_SHUTDOWN_TIMEOUT_SECONDS` (default `20`): graceful API drain timeout.
+- `BACKGROUND_SHUTDOWN_TIMEOUT_SECONDS` (default `60`): time to stop producers and finish final usage/statistics flushes after API drain.
+- `BACKEND_STOP_GRACE_PERIOD` (Compose default `90s`): container grace period; keep it above the sum of the API and background timeouts.
+- `BACKEND_BIND_ADDRESS` (Compose default `127.0.0.1`): host address for the API port binding.
 - `API_UPLOAD_MAX_BODY_BYTES` (default `10485760`, 10 MiB): max request size for multipart upload endpoints.
 - `API_JSON_MAX_BODY_BYTES` (default `1048576`, 1 MiB): max request size for JSON endpoints.
 - `API_MULTIPART_MEMORY_BYTES` (default `1048576`, 1 MiB): in-memory budget used by multipart parsing before temp-file spillover.
@@ -48,7 +51,7 @@ Values `prod` or `production` are treated as production.
 
 - `DISABLE_PUBLIC_REGISTRATION`: disable public `/api/register`.
 - `ENABLE_PUBLIC_FIRST_ADMIN_BOOTSTRAP`: allow first-admin creation through public registration.
-- `ALLOW_INSECURE_REGISTRATION_DEFAULTS`: local-only helper for relaxed registration defaults.
+- `ALLOW_INSECURE_REGISTRATION_DEFAULTS` (base Compose default `true`): enables public registration and first-admin bootstrap for local setup. Production mode ignores this helper, and the production overlay sets it to false. Explicit registration/bootstrap overrides still apply.
 - `AUTH_REVOCATION_FAIL_OPEN` (default `true`): when Redis revocation store is unavailable, allow already-signed/non-expired JWTs.
 
 Auth route rate limiting:

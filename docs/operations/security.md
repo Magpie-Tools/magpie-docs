@@ -2,9 +2,9 @@
 
 ## Secrets and startup validation
 
-- Always set strong, unique `PROXY_ENCRYPTION_KEY` and `JWT_SECRET`.
+- Set a strong, stable `PROXY_ENCRYPTION_KEY`. The installer generates a unique JWT secret in `.env`. Without `JWT_SECRET`, the backend generates a 256-bit key in `/app/data/jwt_secret` and reuses it. Back up that file with the data volume.
 - Prefer strict validation in production (`STRICT_SECRET_VALIDATION=true`).
-- Keep secret values stable across restarts and restore operations.
+- Keep custom JWT secrets and the proxy encryption key stable across restarts and restores. Multiple instances must share an explicit JWT secret. The obsolete published Compose JWT default is replaced with a generated key, which invalidates sessions signed with the old value.
 
 ## Proxy storage
 
@@ -93,3 +93,18 @@ Allow access through one of:
 ## Website blacklist controls
 
 Website blacklist helps prevent usage of blocked judge/scrape/blacklist URLs and can remove existing blocked relations.
+
+## Browser scraping destinations
+
+HTTP fetching and browser rendering validate addresses before connecting.
+Each browser context uses a restricted local proxy. The proxy resolves the
+hostname, rejects private/reserved answers and dials the validated literal
+address. Chromium has no direct fallback or loopback bypass for that context.
+The guard covers redirects, frames, workers, subresources and HTTPS CONNECT
+tunnels. A response-address check cannot undo an outbound request and is not
+the enforcement mechanism.
+
+Chromium's [proxy documentation](https://chromium.googlesource.com/chromium/src/+/HEAD/net/docs/proxy.md)
+explains proxy-side resolution and the explicit loopback bypass subtraction.
+`ALLOW_PRIVATE_NETWORK_EGRESS=true` remains the deliberate override for private
+sources and also changes other application outbound requests.

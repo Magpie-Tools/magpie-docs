@@ -19,14 +19,43 @@ iwr -useb https://raw.githubusercontent.com/Magpie-Tools/magpie/refs/heads/maste
 ### macOS/Linux
 
 ```bash
-./scripts/update-frontend-backend.sh
+./scripts/update-stack.sh
 ```
 
 ### Windows (CMD)
 
 ```bat
-scripts\update-frontend-backend.bat
+scripts\update-stack.bat
 ```
+
+## Compose configuration
+
+The Bash and PowerShell update helpers discover this installation's backend
+through Docker labels and preserve its project name, working directory and
+ordered Compose file list. This covers a name set by an overlay's `name:`, `-p`
+or `COMPOSE_PROJECT_NAME`. The name stays fixed even if downloaded configuration
+changes it, so the update keeps the existing volumes and networks.
+
+A stopped backend retains this metadata, so retrying a failed migration keeps
+the same project and production overlay. The helpers ignore unrelated projects
+and one-off migration containers. Missing files, an inspection failure or
+multiple matching configurations abort the update before stopping the backend.
+The Git checkout helpers use the same update logic.
+
+After `docker compose down`, there is no backend metadata to recover. Persist
+the selection in `.env` before removing containers:
+
+```dotenv
+COMPOSE_FILE=docker-compose.yml:docker-compose.production.yml
+# If you use a custom project name:
+# COMPOSE_PROJECT_NAME=magpie-production
+```
+
+Use `;` instead of `:` on Windows. Append custom overlays in their original
+order and persist a custom project name with `COMPOSE_PROJECT_NAME`. With no
+existing backend, helpers use Compose's settings from the shell or `.env`, or
+the normal default files. `MAGPIE_ENV=production` in `.env`
+also enables backend production defaults.
 
 ## Key safety requirement
 
@@ -36,14 +65,18 @@ Keep `PROXY_ENCRYPTION_KEY` stable during updates. If you rotate it unintentiona
 
 The bundled update scripts stop the backend and run the new image's migration
 before restarting the stack. Before updating, take coordinated PostgreSQL and
-Redis backups. For a manual Docker Compose update, run:
+Redis backups. For a manual production update, keep the same file selection on
+every command:
 
 ```bash
-docker compose pull
-docker compose stop backend
-docker compose run --rm backend --migrate-only
-docker compose up -d
+docker compose -f docker-compose.yml -f docker-compose.production.yml pull
+docker compose -f docker-compose.yml -f docker-compose.production.yml stop backend
+docker compose -f docker-compose.yml -f docker-compose.production.yml run --rm backend --migrate-only
+docker compose -f docker-compose.yml -f docker-compose.production.yml up -d
 ```
+
+Include custom overlays too. If `COMPOSE_FILE` already selects the full list,
+the `-f` arguments can be omitted.
 
 Keep every backend instance stopped until the migration finishes. The proxy
 storage migration removes columns used by older backend images, so rollback

@@ -4,7 +4,7 @@
 
 The default stack includes:
 
-- `backend` on port `5656`
+- `backend` on loopback port `5656`
 - `frontend` on port `5050`
 - `postgres` on host port `5434`
 - `redis` on host port `8946`
@@ -21,10 +21,12 @@ Rotating proxy listener ports are also mapped by default:
 
 ## Required secrets/config
 
-Set these before starting Magpie:
+Set a strong `PROXY_ENCRYPTION_KEY` before starting Magpie.
 
-- `PROXY_ENCRYPTION_KEY`
-- `JWT_SECRET`
+`JWT_SECRET` is optional. The installer generates a unique value and saves it
+in `.env`. With an empty value, the backend creates `/app/data/jwt_secret`
+and reuses it from `backend_data`. Back up that file. Set the same explicit
+`JWT_SECRET` on every instance in a multi-instance deployment.
 
 Optional DB overrides:
 
@@ -34,7 +36,7 @@ Optional DB overrides:
 
 If omitted, Docker Compose uses built-in DB defaults. Installer scripts auto-generate strong DB credentials.
 
-Why it matters:
+`PROXY_ENCRYPTION_KEY` has several uses:
 
 - It encrypts proxy usernames and passwords in PostgreSQL.
 - It derives the keyed fingerprint used to distinguish case-sensitive proxy credentials.
@@ -53,7 +55,7 @@ backups.
 git clone https://github.com/Magpie-Tools/magpie.git
 cd magpie
 cp .env.example .env
-# edit .env and set PROXY_ENCRYPTION_KEY and JWT_SECRET
+# edit .env and set a strong PROXY_ENCRYPTION_KEY; JWT_SECRET can stay blank
 # optional: override DB_USERNAME/DB_PASSWORD/DB_NAME
 docker compose run --rm backend --migrate-only
 docker compose up -d
@@ -70,3 +72,9 @@ Install scripts support environment overrides such as:
 - `MAGPIE_REPO_REF`
 
 See [Deployment](../operations/deployment.md) and [Environment Variables](../reference/environment-variables.md).
+
+Compose initializes settings and browser-cache volume ownership for the nonroot
+backend and repairs volumes created by older root-running images. For internet
+deployments, set `MAGPIE_ENV=production` in `.env` and use
+`docker-compose.production.yml` alongside the base file as described in
+[Deployment](../operations/deployment.md). Both installers download the overlay.
