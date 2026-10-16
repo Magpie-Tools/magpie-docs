@@ -17,19 +17,16 @@ The web dashboard and API manage the same workspace resources.
 
 <div className="docs-paths">
   <Link className="docs-path" to="/learn/">
-    <span className="docs-path__label">Start here</span>
     <h2>Learn Magpie</h2>
     <p>A guided afternoon for a first-time user. Learn the terms, import a route, read a check, and connect through a rotator.</p>
     <span className="docs-path__action">Follow the learning path →</span>
   </Link>
   <Link className="docs-path" to="/backend/">
-    <span className="docs-path__label">Go deeper</span>
     <h2>Inside the backend</h2>
     <p>Follow a route through the Go process, Redis scheduling, workspace checks, PostgreSQL results, and upstream selection.</p>
     <span className="docs-path__action">Explore the backend →</span>
   </Link>
   <Link className="docs-path" to="/getting-started/quick-start">
-    <span className="docs-path__label">Get running</span>
     <h2>Install Magpie</h2>
     <p>Start the Docker Compose stack, create your first account, and verify that the backend is ready.</p>
     <span className="docs-path__action">Open the quick start →</span>
