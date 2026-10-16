@@ -9,7 +9,7 @@ rules and most operational settings live in the application database instead.
 See [Configuration](./configuration.md) to choose the correct place to change
 behavior.
 
-## Apply a setting {#apply-a-setting}
+## Apply a setting {/* #apply-a-setting */}
 
 First identify who reads the variable:
 

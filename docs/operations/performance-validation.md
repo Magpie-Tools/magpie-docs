@@ -139,7 +139,7 @@ Configured in `scripts/perf/assert-snapshot-delta.sh` and `scripts/perf/check-dr
 
 Tune these to your hardware/profile and enforce them in CI/CD.
 
-## Authentication inputs {#inputs-for-auth}
+## Authentication inputs {/* #inputs-for-auth */}
 
 Provide one of:
 
@@ -148,7 +148,7 @@ Provide one of:
 
 If credentials are missing and `MAGPIE_REGISTER_IF_MISSING=true`, the k6 harness auto-registers a user for test execution.
 
-## Running with a local backend {#running-with-local-backend-no-backend-container}
+## Running with a local backend {/* #running-with-local-backend-no-backend-container */}
 
 You can run Postgres/Redis in Docker Compose and run backend from source (`go run`) for pre-push validation.
 

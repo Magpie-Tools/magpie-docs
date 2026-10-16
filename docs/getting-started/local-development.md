@@ -3,7 +3,7 @@
 ## Prerequisites
 
 - Go `1.27.2` or newer
-- Node.js `20.19+` or `22.12+`
+- Node.js `22.12+`
 - npm
 - Docker (for Postgres + Redis during local dev)
 
@@ -11,7 +11,7 @@ The application components are maintained in separate repositories:
 
 - `magpie-backend`: Go `1.27.2`
 - `magpie-frontend`: Angular `21`, PrimeNG `21`, Tailwind CSS `4`; use the exact dependency versions in `package.json` and the lockfile.
-- `magpie-docs`: Docusaurus on Node.js `20+`
+- `magpie-docs`: Docusaurus on Node.js `22.12+`
 
 Clone the repositories as siblings so commands and tooling have a predictable
 workspace:

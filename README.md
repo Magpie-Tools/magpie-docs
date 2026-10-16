@@ -14,7 +14,7 @@ The Docusaurus source for the Magpie documentation published at
 
 ## Requirements
 
-- Node.js `20+`
+- Node.js `22.12+`
 - npm
 
 ## Development

@@ -55,7 +55,7 @@ flowchart TD
 
 The Mermaid theme is pinned to the same version as Docusaurus and configured
 in `docusaurus.config.ts`, following the
-[Docusaurus diagram integration](https://docusaurus.io/docs/3.9.2/markdown-features/diagrams).
+[Docusaurus diagram integration](https://docusaurus.io/docs/markdown-features/diagrams).
 `src/theme/Mermaid` wraps diagrams with horizontal scrolling and a native
 dialog for a larger view. It supports keyboard focus, Escape, and light/dark
 themes. Keep accessible titles and descriptions in each diagram's source.

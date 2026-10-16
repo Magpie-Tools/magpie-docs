@@ -56,7 +56,7 @@ Success (`200`):
 `proxy_count` is the number of waiting queue members actually rescheduled.
 It excludes leased members, including leases claimed during the operation.
 
-## Requeue one proxy {#requeue-one-proxy}
+## Requeue one proxy {/* #requeue-one-proxy */}
 
 `POST /api/global/proxies/{id}/requeue` requires the global admin role and
 access to the selected workspace. It reloads the managed route and queues it
