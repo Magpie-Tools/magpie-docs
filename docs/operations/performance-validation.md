@@ -1,127 +1,93 @@
-# Performance Validation
+---
+description: Prepare an isolated workload, run the performance gate, interpret latency and growth budgets, and retain reproducible release evidence.
+---
+
+# Performance validation
+
+Magpie's capacity depends on active route count, check intervals, shared
+workspace ownership, response sizes, and storage throughput. A small successful
+installation does not establish how it behaves with millions of routes.
+Use this guide when releasing a backend change or sizing a deployment.
 
 ## Goal
 
-Prove million-scale behavior with repeatable load and soak tests, not assumptions.
+Measure API latency, errors, checker/scraper backlog, database growth, and
+statistics drops under a representative sustained workload. Choose the
+acceptable latency and growth budgets before the run.
 
-Validation should cover:
+| Check | What it can establish | What it leaves open |
+| --- | --- | --- |
+| Unit and integration regressions | Correctness and bounded operation counts for controlled fixtures. | Full-system throughput and long-running resource growth. |
+| Component benchmarks | Cost per queue cycle, decode, or checker request on the measured host. | Production networking, shared-tenant persistence, and outage behavior. |
+| Smoke gate | The load scripts, authentication, snapshots, and log collection work. | Production capacity and durability. |
+| Release gate | Sustained behavior for the recorded dataset, hardware, and test duration. | Different workloads and longer unmeasured periods. |
 
-- latency SLOs (p95/p99)
-- error rate under sustained load
-- queue depth/backlog behavior
-- DB row/size growth during soak
-- dropped statistics budget
+The [backend walkthrough](../backend/index.md) explains which components these
+measurements cover. [Testing](../contributing/testing.md) lists the correctness
+checks to run before expensive load validation.
 
-Run million-scale checker validation with
-`PROXY_QUEUE_ENCRYPT_CREDENTIALS=false`, which is the throughput-oriented
-default. If a deployment enables queue credential encryption, repeat the same
-test matrix with it enabled and treat the resulting checker capacity as a
-separate deployment profile.
+## Prepare an isolated target
+
+Use a dedicated Magpie installation, PostgreSQL database, and Redis service.
+The harness imports data and changes storage volume; queue regression fixtures
+can flush their configured database. Do not point them at a live installation.
+
+1. Migrate and start the target at the proposed component versions.
+2. Seed the intended number of active routes, sources, workspaces, and shared
+   ownership. Use reachable controlled judges and representative proxy behavior.
+3. Set the checker/scraper concurrency and intervals you intend to deploy.
+4. Install `k6` and Docker with Compose support on the load runner.
+5. Supply a dedicated test account/token and a backend log source for the whole
+   run. An empty log file does not satisfy the drop check.
+6. Record hardware, container limits, component/dependency versions, shard counts,
+   retention settings, and dataset size before starting.
+
+Run the default capacity profile with `PROXY_QUEUE_ENCRYPT_CREDENTIALS=false`.
+If the deployment opts into queue encryption, repeat the same matrix with it
+enabled and report its measured capacity separately.
+
+From the `magpie` repository root, prepare the API target and token:
+
+```bash
+export MAGPIE_BASE_URL=http://127.0.0.1:5656
+export MAGPIE_REGISTER_IF_MISSING=false
+read -rs -p 'Dedicated test account bearer token: ' MAGPIE_TOKEN
+export MAGPIE_TOKEN
+```
+
+The harness uses this account's default workspace. Confirm it is the workspace
+whose dataset you prepared. To target an installer-created stack in another
+directory, also set the distribution harness inputs:
+
+```bash
+export MAGPIE_COMPOSE_FILE=/absolute/path/to/installation/docker-compose.yml
+export MAGPIE_ENV_FILE=/absolute/path/to/installation/.env
+```
+
+See the [distribution harness README](https://github.com/Magpie-Tools/magpie/blob/master/scripts/perf/README.md)
+for suite-specific rates, virtual users, and fixture controls.
 
 ## Go and dependency upgrades
 
-The backend uses Go `1.27.2` in its module, CI, and Docker builder. Backend CI
-runs tests, race tests, vet, build, a vulnerability scan, and the PostgreSQL
-integration tests.
+Use the Go version declared in `magpie-backend/go.mod` and run the full backend
+checks described in [Testing](../contributing/testing.md). For before/after
+comparisons, run the plaintext queue decode, Redis dequeue/requeue, checker HTTP,
+and client-cache churn benchmarks from the harness README.
 
-For compiler and dependency comparisons, run the plaintext queue decode,
-Redis dequeue/requeue, and checker HTTP benchmarks documented in the
-[distribution performance harness](https://github.com/Magpie-Tools/magpie/blob/main/scripts/perf/README.md).
-Keep the Redis instance and PostgreSQL database isolated from running Magpie
-installations. Compare allocations and time per operation with the same
-settings on the same host, then run the sustained load and soak matrix below
-before a production rollout.
+Use the same host, toolchain settings, dataset, and dependency configuration.
+Record allocations, time per operation, and throughput. For checker/queue
+changes, count added cryptographic operations, JSON encodes, Redis commands,
+and database queries per check. Current plaintext payloads must reuse the
+stored route hash, and normal requeues must leave the payload untouched.
 
-The Redis client `9.22` changes its default read/write timeouts from `3s` to
-`5s`, and retry backoff from `8ms`/`512ms` to `10ms`/`1s`. In single-instance
-mode, explicit values in `REDIS_URL` continue to override those defaults.
-Include stalled Redis and reconnect cases when validating upgrade latency.
-TCP keep-alive now starts probing after `30s` of idle time, previously `5m`.
+Include stalled dependencies and reconnects in comparisons. For example, the
+Redis client 9.22 defaults changed read/write timeouts from 3 to 5 seconds,
+retry backoff from 8ms/512ms to 10ms/1s, and idle TCP keep-alive probing from
+five minutes to 30 seconds. Explicit single-mode `REDIS_URL` values still
+override the client defaults. A normal-path benchmark does not expose those
+outage latencies.
 
 ## Test matrix
-
-Statistics replay protection and persisted reputation refresh require the
-`proxy_statistic_events` and `proxy_reputation_refreshes` tables. Run the
-backend's `--migrate-only` job before starting upgraded backends, and stop
-previous checker instances during the upgrade so all workers use lease renewal
-and fenced completion.
-The updated queue marks leases in scheduling scores. Previous checker versions
-cannot safely share the queue with new workers. Bulk requeue preserves active
-checks; expired leases remain available for normal recovery. Imports retain a
-route in its owned shard until its worker completes.
-Old and current hashes for the same route also reconcile atomically when a
-worker encounters the old alias. The worker merges workspace owners, consumes
-the alias, and preserves an active current lease without starting another
-check. No queue flush or additional database migration is required for this
-reconciliation. Keep the encryption key stable and the shard count consistent
-across instances.
-
-Set `MAGPIE_TEST_POSTGRES_DSN` and `MAGPIE_TEST_REDIS_URL` to disposable services
-when running the backend regression suites. They cover partial pending stream
-recovery, duplicate usage accounting, rotator counts at 65,536 candidates,
-usage writes with one million routes, uptime selection with unrelated history,
-and source count coalescing.
-Set `MAGPIE_TEST_QUEUE_REDIS_URL` to a separate empty disposable Redis database
-to exercise queue races against real Redis. That fixture flushes its database.
-These regressions include bulk requeue during an active check, imports from
-legacy and other configured shards, and statistics cancellation followed by
-replay of a 5,001-event batch. Unset `REDIS_URL` and `redisUrl` during full suites
-so connection-failure fixtures can override their addresses.
-
-Bulk proxy deletion has a separate PostgreSQL regression. From `magpie-backend`,
-using an isolated test database:
-
-```sh
-MAGPIE_TEST_BULK_DELETE_ROUTES=70000 \
-  go test ./internal/database -run '^TestBulkProxyDeletion' -count=1 -v -timeout=10m
-```
-
-Keep `MAGPIE_TEST_POSTGRES_DSN` set for this command. The fixture includes
-41 overlapping sources, four checker rules, tagged overrides, and shared route
-ownership. It checks that source health refreshes once, orphan lookups stay
-within PostgreSQL's parameter limit, and counts remain correct after a later
-batch fails. Measure endpoint completion under normal checker and scraper load
-as well; this fixture measures database work and excludes Redis cleanup and
-live checker-snapshot refresh. This correction requires no schema or
-configuration change.
-
-Alias migration regressions cover concurrent aliases, current claims and
-imports during migration preparation, stale source leases, and expired current
-leases with plaintext and encrypted compatibility payloads. The separate
-`BenchmarkProxyQueueLegacyRekey` benchmark measures migration with eight
-existing owners and one added owner. Compare its cost separately from ordinary
-plaintext queue throughput.
-
-On shutdown, the backend waits for producers to stop before canceling usage
-and statistics consumers. After statistics and reputation writers stop, read
-models refresh proxy filters, then drain all queued scrape-source statistics
-batches. Redis stays open until these stages finish. The SIGTERM regression
-checks both proxy filters and source counters in stream and memory modes, with
-more source associations than fit in one refresh batch.
-Statistics stream workers leave unacknowledged entries pending for
-recovery. The ledger prevents committed entries from counting twice. Pending
-entries from another consumer become recoverable after at least one minute idle.
-The volatile in-memory fallback makes one final persistence attempt bounded by
-the 30-second database timeout; a failed final attempt has no durable recovery.
-
-Reputation workers drain persisted requests continuously. Watch
-`magpie_proxy_reputation_refresh_pending` and
-`magpie_proxy_reputation_refresh_oldest_age_seconds` during sustained tests.
-Tune worker count and batch size against database load. The defaults do not
-establish capacity for a tens-of-millions installation.
-
-Source health counts update in a separate coalescing loop, every 30 seconds
-for up to 100 source/workspace pairs by default. Large backlogs require more
-time or an adjusted batch size. Proxy-list health keeps its own refresh loop.
-Source notification work no longer recounts the pool after every route update;
-the coalesced refresh still aggregates the affected source pool.
-
-Ledger maintenance persists a replay floor before retiring event identities.
-Measure `proxy_statistic_events` and its indexes, `proxy_statistic_streams`, and
-`proxy_check_totals`. Monitor pending age and maintenance progress; an old pending
-event delays retirement. Accelerated regressions do not establish stability over
-months. Sustained soaks should include dependency outages, import/delete churn,
-month boundaries, and idle tunnels.
 
 | Suite | Script | Default duration | Primary focus | Gate criteria |
 | --- | --- | --- | --- | --- |
@@ -133,7 +99,7 @@ month boundaries, and idle tunnels.
 
 ## Release gate procedure
 
-Run from repo root:
+Run from the `magpie` distribution repository root:
 
 ```bash
 cd scripts/perf
@@ -173,7 +139,7 @@ Configured in `scripts/perf/assert-snapshot-delta.sh` and `scripts/perf/check-dr
 
 Tune these to your hardware/profile and enforce them in CI/CD.
 
-## Inputs for auth
+## Authentication inputs {#inputs-for-auth}
 
 Provide one of:
 
@@ -182,7 +148,7 @@ Provide one of:
 
 If credentials are missing and `MAGPIE_REGISTER_IF_MISSING=true`, the k6 harness auto-registers a user for test execution.
 
-## Running with local backend (no backend container)
+## Running with a local backend {#running-with-local-backend-no-backend-container}
 
 You can run Postgres/Redis in Docker Compose and run backend from source (`go run`) for pre-push validation.
 
@@ -221,5 +187,102 @@ for the complete run, including rotations.
 Record route count, tenant sharing, active checker/scraper load, hardware,
 retention settings and dependency versions with release evidence. Include
 outages, import/delete churn, month boundaries, idle tunnels and a backup
-restore exercise. The regression suites and a short smoke run do not replace a
-representative 24-to-72-hour soak or establish months of stability.
+restore exercise. Use a representative 24-to-72-hour soak for release evidence. Regression tests
+and a short smoke run cannot establish that capacity or months of stability.
+
+## Regression coverage and upgrade constraints
+
+Statistics replay protection and persisted reputation refresh require the
+`proxy_statistic_events` and `proxy_reputation_refreshes` tables. Run the
+backend's `--migrate-only` job before starting upgraded backends, and stop
+previous checker instances during the upgrade so all workers use lease renewal
+and fenced completion.
+The updated queue marks leases in scheduling scores. Previous checker versions
+cannot safely share the queue with new workers. Bulk requeue preserves active
+checks; expired leases remain available for normal recovery. Imports retain a
+route in its owned shard until its worker completes.
+Old and current hashes for the same route also reconcile atomically when a
+worker encounters the old alias. The worker merges workspace owners, consumes
+the alias, and preserves an active current lease without starting another
+check. No queue flush or additional database migration is required for this
+reconciliation. Keep the encryption key stable and the shard count consistent
+across instances.
+
+### Real-service regression fixtures
+
+Set `MAGPIE_TEST_POSTGRES_DSN` and `MAGPIE_TEST_REDIS_URL` to disposable services
+when running the backend regression suites. They cover partial pending stream
+recovery, duplicate usage accounting, rotator counts at 65,536 candidates,
+usage writes with one million routes, uptime selection with unrelated history,
+and source count coalescing.
+Set `MAGPIE_TEST_QUEUE_REDIS_URL` to a separate empty disposable Redis database
+to exercise queue races against real Redis. That fixture flushes its database.
+These regressions include bulk requeue during an active check, imports from
+legacy and other configured shards, and statistics cancellation followed by
+replay of a 5,001-event batch. Unset `REDIS_URL` and `redisUrl` during full suites
+so connection-failure fixtures can override their addresses.
+
+### Bulk deletion
+
+Bulk proxy deletion has a separate PostgreSQL regression. From `magpie-backend`,
+using an isolated test database:
+
+```sh
+MAGPIE_TEST_BULK_DELETE_ROUTES=70000 \
+  go test ./internal/database -run '^TestBulkProxyDeletion' -count=1 -v -timeout=10m
+```
+
+Keep `MAGPIE_TEST_POSTGRES_DSN` set for this command. The fixture includes
+41 overlapping sources, four checker rules, tagged overrides, and shared route
+ownership. It checks that source health refreshes once, orphan lookups stay
+within PostgreSQL's parameter limit, and counts remain correct after a later
+batch fails. Measure endpoint completion under normal checker and scraper load
+as well; this fixture measures database work and excludes Redis cleanup and
+live checker-snapshot refresh. This correction requires no schema or
+configuration change.
+
+### Queue alias migration
+
+Alias migration regressions cover concurrent aliases, current claims and
+imports during migration preparation, stale source leases, and expired current
+leases with plaintext and encrypted compatibility payloads. The separate
+`BenchmarkProxyQueueLegacyRekey` benchmark measures migration with eight
+existing owners and one added owner. Compare its cost separately from ordinary
+plaintext queue throughput.
+
+### Shutdown and replay
+
+On shutdown, the backend waits for producers to stop before canceling usage
+and statistics consumers. After statistics and reputation writers stop, read
+models refresh proxy filters, then drain all queued scrape-source statistics
+batches. Redis stays open until these stages finish. The SIGTERM regression
+checks both proxy filters and source counters in stream and memory modes, with
+more source associations than fit in one refresh batch.
+Statistics stream workers leave unacknowledged entries pending for
+recovery. The ledger prevents committed entries from counting twice. Pending
+entries from another consumer become recoverable after at least one minute idle.
+The volatile in-memory fallback makes one final persistence attempt bounded by
+the 30-second database timeout; a failed final attempt has no durable recovery.
+
+### Asynchronous read models
+
+Reputation workers drain persisted requests continuously. Watch
+`magpie_proxy_reputation_refresh_pending` and
+`magpie_proxy_reputation_refresh_oldest_age_seconds` during sustained tests.
+Tune worker count and batch size against database load. The defaults do not
+establish capacity for a tens-of-millions installation.
+
+Source health counts update in a separate coalescing loop, every 30 seconds
+for up to 100 source/workspace pairs by default. Large backlogs require more
+time or an adjusted batch size. Proxy-list health keeps its own refresh loop.
+Source notification work no longer recounts the pool after every route update;
+the coalesced refresh still aggregates the affected source pool.
+
+### Long-running storage growth
+
+Ledger maintenance persists a replay floor before retiring event identities.
+Measure `proxy_statistic_events` and its indexes, `proxy_statistic_streams`, and
+`proxy_check_totals`. Monitor pending age and maintenance progress; an old pending
+event delays retirement. Accelerated regressions do not establish stability over
+months. Sustained soaks should include dependency outages, import/delete churn,
+month boundaries, and idle tunnels.

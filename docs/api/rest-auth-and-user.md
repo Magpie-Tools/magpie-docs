@@ -1,4 +1,50 @@
-# REST: Auth and User
+---
+description: "Register, sign in, recover passwords, and update account and workspace preferences through REST."
+---
+
+# REST: auth, account, and settings
+
+These endpoints cover two scopes. Account actions identify the signed-in person;
+workspace settings identify the workspace selected by `X-Workspace-ID` or the
+account's default membership. A settings endpoint with a historical `user`
+name still edits workspace behavior.
+
+## Choose the operation
+
+| Task | Scope | Important result |
+| --- | --- | --- |
+| Register or sign in | Account | Receive a bearer token. Registration depends on instance policy. |
+| Refresh or log out | Current token | Refresh replaces and revokes the old token; logout returns no body. |
+| Change/reset password | Account | Active sessions are revoked under the revocation-store policy. |
+| Delete account | Account and memberships | Shared-workspace ownership must be resolved first. |
+| Read/save checker settings and judges | Selected workspace | Operator access for writes; omitted fields retain their values. |
+| Save table columns | Member in selected workspace | Does not recompile checker settings. |
+| Export proxies | Selected workspace | Text stream; the transfer must finish successfully. |
+| Read profile | Account | Email and global role, independent of workspace selection. |
+
+New clients should use `GET` and `POST /api/workspace/settings` for workspace
+settings. `/api/user/settings` remains a compatible alias with the payloads
+documented below. Start with the [API workflow](rest-overview.md) if you need
+to obtain a token and workspace ID.
+
+## Save only what you edited
+
+For example, update judges without resending a stale checker-rule list:
+
+```http
+POST /api/workspace/settings
+Authorization: Bearer <token>
+X-Workspace-ID: 42
+Content-Type: application/json
+
+{"judges":[{"url":"https://judge.example.test/","regex":"expected response"}]}
+```
+
+The judge URL is a placeholder. Use a reachable judge and a validation rule
+that matches its response. Supplying `checker_settings` replaces Default and
+the full ordered rule list together; omitting it preserves those rules.
+Use [checker settings](../user-guide/checker-and-judges.md) to understand
+inheritance before constructing a full replacement.
 
 ## `POST /api/register`
 
@@ -33,12 +79,13 @@ Success (`201`):
 
 ```json
 {
-  "token": "<jwt>",
-  "warning": "Default scrape sources could not be queued and were rolled back. Add sources again later."
+  "token": "<jwt>"
 }
 ```
 
-`warning` is optional and appears only when default scrape-source bootstrap could not be queued.
+An optional `warning` can report that default scrape sources could not be
+queued and were rolled back. The account still exists. Add sources again
+after resolving the queue problem; do not register the same account again.
 
 ## `POST /api/login`
 
@@ -232,7 +279,7 @@ Requires operator or higher in the selected workspace. Saves workspace
 protocol/checker settings and judges. Column preferences are stored for the
 authenticated user in that workspace.
 
-Request uses the same fields as `GET /api/user/settings`. Omitted fields retain
+Request accepts the editable settings fields returned by `GET /api/user/settings`. Omitted fields retain
 their stored values. Providing `checker_settings` atomically replaces Default
 and the complete ordered rule list. `rules[0]` has highest priority and applies
 last. Tag IDs must belong to the selected workspace. Duplicate tags or protocols,
@@ -248,7 +295,7 @@ Column-only saves update the member's preferences without triggering checker
 reconciliation or changing workspace checker revisions.
 
 `defaults` contains `protocols`, a list of enabled protocol names, and the required
-shared `transport`, `timeout` of 1–65535 ms, and `retries` of 0–255. Protocol names
+shared `transport`, `timeout` of 1 through 65535 ms, and `retries` of 0 through 255. Protocol names
 are `http`, `https`, `socks4`, and `socks5`. Supported transports are `tcp`, `quic`,
 and `http3`. All enabled protocols use the same effective transport and budget.
 
@@ -286,11 +333,16 @@ Success (`200`):
 {"message": "Settings saved successfully"}
 ```
 
-Current implementation note:
+Source-management boundary:
 
 - `scraping_sources` may be accepted in this payload but scrape-source persistence is managed by `POST /api/scrapingSources` and `DELETE /api/scrapingSources`.
 - `/api/workspace/settings` is the preferred alias. `/api/user/settings`
   remains available for client compatibility; both are workspace-scoped.
+
+Read a saved workspace configuration after a write when your client needs
+the normalized result. Newly saved settings apply to subsequent checks;
+already running checks finish with their captured configuration. Current health
+can be unknown until the new settings projection and matching evidence exist.
 
 ## `GET /api/user/role`
 

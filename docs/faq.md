@@ -1,8 +1,37 @@
 # FAQ
 
+## Where should I start if I have never used a proxy manager?
+
+Follow [Learn Magpie in an afternoon](learn/index.md). It introduces the parts,
+walks through one route, then explains automation and troubleshooting. The
+[backend section](backend/index.md) continues into the implementation.
+
+## Does installing Magpie give me a working proxy pool?
+
+Magpie manages routes you import or discover from sources. Installation does
+not supply a guaranteed working pool. Use your own allowed proxy for the
+[first live workflow](learn/first-proxy.md). Development fixtures provide
+simulated UI data and do not run live checking or rotation.
+
+## Which address should my application connect to?
+
+Use the allocated listener host and port shown for your rotating proxy.
+`5050` serves the dashboard and `5656` serves the API. They are separate from
+the proxy listener ports, which default to the range `20000-20100` in Compose.
+See [the first curl request](learn/first-proxy.md#5-create-a-rotating-listener).
+
+## Why is an active proxy not alive yet?
+
+Active means the workspace manages it actively. Health needs applicable
+committed check evidence. Unknown can mean a scheduled check has not run,
+no eligible judge/protocol exists, or settings changed and need new evidence.
+Use the [diagnostic workflow](learn/observe-and-troubleshoot.md).
+
 ## Is Magpie multi-user?
 
-Yes. User accounts are role-based.
+Yes. Accounts join workspaces through memberships with owner, admin, operator,
+or viewer roles. Workspaces own the operational resources and capacity.
+See [workspaces](user-guide/workspaces.md).
 
 ## How is the first admin created?
 

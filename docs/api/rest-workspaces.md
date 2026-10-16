@@ -1,6 +1,32 @@
-# REST: Workspaces
+---
+description: "Discover and select workspaces, manage invitations and roles, and transfer ownership safely through REST."
+---
+
+# REST: workspaces
 
 All endpoints require a valid bearer token. Workspace resource endpoints also require membership in the selected workspace.
+
+## Discover access before using IDs
+
+Use `GET /api/workspaces` to discover this account's memberships. Workspace IDs
+are not account IDs and clients must not derive one from the other. Capacity
+belongs to the workspace rather than to the member who imported a route.
+
+For repeatable automation, send an explicit `X-Workspace-ID` on operational
+resource requests. `POST /workspaces/{id}/select` changes an account-wide default
+selection; an explicit header avoids relying on that mutable preference.
+
+| Workflow | Requests |
+| --- | --- |
+| Find/read a workspace | `GET /workspaces`, then `GET /workspaces/{id}`. |
+| Create and select one | `POST /workspaces`, then `POST /workspaces/{id}/select`. |
+| Invite an existing account | Create outgoing invitation, then the recipient reads `/invitations` and accepts. |
+| Open an accepted workspace | Read memberships and select explicitly. Acceptance itself does not select it. |
+| Transfer shared ownership | Promote an existing member to owner before removing the final old owner. |
+
+All paths in this table are under `/api`. The endpoint sections below contain
+request bodies and role restrictions. [Workspace workflows](../user-guide/workspaces.md)
+explain the same operations in the UI.
 
 ## Workspace selection
 

@@ -18,6 +18,15 @@ const config: Config = {
   projectName: 'magpie-docs',
 
   onBrokenLinks: 'throw',
+  onBrokenAnchors: 'throw',
+
+  markdown: {
+    mermaid: true,
+    hooks: {
+      onBrokenMarkdownLinks: 'throw',
+    },
+  },
+  themes: ['@docusaurus/theme-mermaid'],
 
   i18n: {
     defaultLocale: 'en',
@@ -46,6 +55,12 @@ const config: Config = {
     colorMode: {
       respectPrefersColorScheme: true,
     },
+    mermaid: {
+      theme: {light: 'neutral', dark: 'dark'},
+      options: {
+        fontFamily: 'system-ui, sans-serif',
+      },
+    },
     navbar: {
       title: 'Magpie Docs',
       logo: {
@@ -58,6 +73,16 @@ const config: Config = {
           sidebarId: 'docsSidebar',
           position: 'left',
           label: 'Docs',
+        },
+        {
+          to: '/learn/',
+          label: 'Learn Magpie',
+          position: 'left',
+        },
+        {
+          to: '/backend/',
+          label: 'Backend internals',
+          position: 'left',
         },
         {
           href: 'https://github.com/Magpie-Tools',
@@ -77,8 +102,16 @@ const config: Config = {
               to: '/',
             },
             {
+              label: 'Learning path',
+              to: '/learn/',
+            },
+            {
+              label: 'Backend internals',
+              to: '/backend/',
+            },
+            {
               label: 'Installation',
-              to: '/installation',
+              to: '/getting-started/installation',
             },
           ],
         },

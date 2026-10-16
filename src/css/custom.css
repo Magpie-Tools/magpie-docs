@@ -28,3 +28,63 @@
   --ifm-color-primary-lightest: #4fddbf;
   --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.3);
 }
+
+.docs-paths {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+  gap: 1rem;
+  margin: 2rem 0;
+}
+
+.docs-path {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1.5rem;
+  border: 1px solid var(--ifm-color-emphasis-300);
+  border-radius: 0.75rem;
+  color: var(--ifm-font-color-base);
+  background: var(--ifm-background-surface-color);
+}
+
+.docs-path:hover {
+  text-decoration: none;
+  border-color: var(--ifm-color-primary);
+  color: var(--ifm-font-color-base);
+}
+
+.docs-path:focus-visible {
+  outline: 2px solid var(--ifm-color-primary);
+  outline-offset: 3px;
+}
+
+.docs-path h2 {
+  margin: 0;
+  font-size: 1.35rem;
+}
+
+.docs-path p {
+  margin: 0;
+  line-height: 1.65;
+}
+
+.docs-path__label {
+  color: var(--ifm-color-emphasis-700);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.docs-path__action {
+  margin-top: auto;
+  color: var(--ifm-color-primary);
+  font-weight: 600;
+}
+
+.markdown details {
+  margin: 1.5rem 0;
+}
+
+.markdown summary {
+  cursor: pointer;
+  font-weight: 600;
+}

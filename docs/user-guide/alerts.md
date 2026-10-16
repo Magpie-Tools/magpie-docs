@@ -1,6 +1,36 @@
+---
+description: Create a first alert, choose a measurement and scope, understand incident timing, and diagnose delivery failures.
+---
+
 # Alerts
 
 Open **Alerts** in the sidebar to monitor a rotating proxy's upstream pool or your whole workspace. Rules are opt-in. Creating a rule starts evaluation; Magpie does not create rules or send alert messages automatically for existing workspaces.
+
+## Create your first rule
+
+A useful first alert reports when a rotating pool becomes empty.
+
+1. As a workspace admin or owner, open **Alerts** and add a destination, such as
+   your operations email address. Email needs the installation's SMTP settings.
+2. Create a rule for the rotating pool your clients use.
+3. Choose **Usable routes**, set the minimum to `1`, and attach the destination.
+4. Save the enabled rule. Review its latest measurement and status after the
+   next evaluation. With no destinations attached, incidents still appear in
+   Magpie.
+5. When a sustained breach opens an incident, inspect its delivery outcome.
+   When the pool recovers for two healthy minutes, check for the recovery message.
+
+A count of `1` is healthy for this rule. A count of `0` breaches it. **Unknown**
+means Magpie cannot make that decision yet; it does not mean zero.
+
+Choose the scope to match the decision you want to make:
+
+| Question | Scope and condition |
+| --- | --- |
+| Can this listener still choose an upstream route? | That rotating pool, **Usable routes**. |
+| Does the workspace have enough currently usable routes overall? | Whole workspace, **Usable routes**. |
+| Are this workspace's recent checks mostly failing? | Whole workspace, **Checker success rate**. |
+| Are checks for this rotator's upstream protocol getting slow? | That rotating pool, **Average successful-check latency**. Read the measurement limits below. |
 
 ## Configure delivery
 
@@ -62,6 +92,28 @@ Magpie evaluates a workspace's rules together and shares repeated measurements. 
 
 Success-rate rules need at least 20 attributed attempts in the window. Latency rules need at least 20 successful attempts. Too few samples, missing current evidence, unapplied checker settings, and measurement-query failures produce **Unknown**. Unknown neither opens a threshold incident nor reports recovery for an open one.
 
+```mermaid
+sequenceDiagram
+    accTitle: One alert incident from breach to recovery
+    accDescr: A rule needs two observed minutes of a known breach before opening an incident and sending an opening message. Unknown data interrupts pending timers without recovering an open incident. Two observed healthy minutes produce a recovery message.
+    participant M as Rule measurement
+    participant I as Incident
+    participant D as Destinations
+    M->>M: Known breach observed for two minutes
+    M->>I: Open incident
+    I->>D: Queue opening message
+    Note over M,I: Unknown resets pending timers.<br/>An open incident stays open.
+    M->>M: Healthy observed for two minutes
+    M->>I: Close as recovered
+    I->>D: Queue recovery message
+```
+
+For example, if a minimum of `50` first breaches at `12:00`, continued known
+breaches at `12:01` and `12:02` can open the incident. An unknown measurement at
+`12:01` interrupts that run, so `12:02` cannot complete the earlier timer.
+Evaluation scheduling and query time mean these are observed durations, not
+an exact wall-clock delivery promise.
+
 An incident sends one opening message and one recovery message to its enabled destinations. There are no recurring reminders. Delivery attempts may retry; they are separate from repeated incident notifications.
 
 Editing, disabling, or deleting a rule closes its open incident as **Configuration changed** and cancels unsent messages. Deleting a monitored rotator also disables its rules and closes their incidents. These closures do not send a recovery message. Saving an edited rule starts evaluation again, so a continuing breach can open a new incident after two minutes.
@@ -79,6 +131,21 @@ Each backend instance sends up to ten messages concurrently and keeps draining q
 Opening and recovery messages are ordered for each incident and destination. After fixing a destination or sender configuration, an admin can retry the latest failed message if the destination is enabled and the rule has not changed. An older opening cannot be retried once a newer recovery message exists.
 
 Delivery is at least once. A crash after the receiver accepts a message but before Magpie records success can produce a duplicate. Generic webhook receivers should deduplicate using `X-Magpie-Delivery-ID`.
+
+### Diagnose an unsent notification
+
+1. Check that an incident actually opened. A pending breach or unknown
+   measurement has no opening message yet.
+2. Check that the rule has an enabled destination. Rules without destinations
+   still record incidents.
+3. Open the delivery outcome. Fix the reported SMTP, receiver, rate-limit, or
+   outbound-policy error.
+4. If permitted, retry the latest failed delivery. Editing a rule changes its
+   revision and can make an old delivery ineligible for retry.
+
+A sent status means the configured receiver accepted the message. It does not
+prove a person read it. See [Troubleshooting](../operations/troubleshooting.md)
+for SMTP checks and [Alerts API](../api/rest-alerts.md) for retry requirements.
 
 ## Generic webhook payload
 

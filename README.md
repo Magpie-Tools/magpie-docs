@@ -3,6 +3,15 @@
 The Docusaurus source for the Magpie documentation published at
 [magpie.tools/docs](https://magpie.tools/docs/).
 
+## Reading paths
+
+- [Learn Magpie in an afternoon](docs/learn/index.md) introduces the software
+  through diagrams, practical workflows, and checkpoints.
+- [Backend internals](docs/backend/index.md) follows a route through the Go
+  process, queues, checker, persistence, and rotation, with source links.
+- [Documentation maintenance](docs/contributing/docs.md) describes the content
+  structure and visual review workflow.
+
 ## Requirements
 
 - Node.js `20+`
@@ -23,6 +32,11 @@ npm run build
 ```
 
 The generated static output is written to `build/`.
+
+The build checks internal links and anchors strictly. Run `npm run serve` to
+inspect the result. Mermaid diagrams render in the browser and include
+accessible descriptions, horizontal scrolling, and an expandable view. Check
+changed diagrams in light/dark themes and at desktop/mobile widths.
 
 ## Deployment
 

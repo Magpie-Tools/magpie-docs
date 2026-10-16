@@ -1,5 +1,23 @@
 # Data Storage
 
+Read [results, storage, and replay](../backend/results-and-storage.md) for a
+step-by-step explanation. This reference describes the persisted models.
+
+```mermaid
+flowchart TD
+    accTitle: Inventory and result storage
+    accDescr: PostgreSQL reconstructs Redis active inventory. Workers read the queue and send results through a stream or memory buffer into a PostgreSQL transaction. Derived views refresh afterward.
+    PG["PostgreSQL: authoritative resources and committed checks"] --> Queue["Reconstruct active inventory in Redis"]
+    Queue --> Work["Checker workers"]
+    Work --> Stream["Redis stream or memory result buffer"]
+    Stream --> Commit["PostgreSQL statistics transaction"]
+    Commit --> Views["Derived reputation, source counts, dashboards"]
+```
+
+Reconstructing Redis inventory does not recover results lost before the
+statistics transaction. Back up PostgreSQL, Redis, backend data, and stable
+secrets according to [backup and recovery](../operations/backup-and-recovery.md).
+
 ## PostgreSQL
 
 Primary persistent store for:

@@ -1,110 +1,170 @@
+---
+description: Understand Magpie's secret storage, Redis trust boundary, account and workspace authorization, and production network controls.
+---
+
 # Security
 
-## Secrets and startup validation
+Magpie holds proxy credentials and can make outbound network requests. Protect
+the services that store those credentials, restrict who can change operational
+settings, and control where backend traffic can go. The
+[deployment guide](./deployment.md) turns these boundaries into a running stack.
 
-- Set a strong, stable `PROXY_ENCRYPTION_KEY`. The installer generates a unique JWT secret in `.env`. Without `JWT_SECRET`, the backend generates a 256-bit key in `/app/data/jwt_secret` and reuses it. Back up that file with the data volume.
-- Prefer strict validation in production (`STRICT_SECRET_VALIDATION=true`).
-- Keep custom JWT secrets and the proxy encryption key stable across restarts and restores. Multiple instances must share an explicit JWT secret. The obsolete published Compose JWT default is replaced with a generated key, which invalidates sessions signed with the old value.
+## Know where data is readable
 
-## Proxy storage
+| Location | Proxy hosts and ports | Proxy usernames and passwords | Protection to provide |
+| --- | --- | --- | --- |
+| PostgreSQL | Queryable, including an `inet` projection for literal IP routes. | Authenticated ciphertext on each workspace's managed-proxy row. | Private networking, restricted roles, transport protection as required, encrypted storage and backups. |
+| Redis queue | Queryable runtime payloads. | Plaintext by default. | Private networking, authentication, restricted ACLs, TLS for remote access, encrypted volumes and backups. |
+| Authorized API responses and exports | Returned when the request needs them. | Can be returned to an authorized workspace user. | HTTPS, suitable workspace roles, protected client logs and exported files. |
+| Backup bundle | Contains the captured service data and configuration. | Redis and configuration can contain readable secrets. | Encryption, restricted access, and a tested key recovery process. |
 
-- PostgreSQL and Redis store proxy hosts and ports in queryable form. PostgreSQL also keeps a native `inet` projection for literal IP routes. A service reader can see these values.
-- PostgreSQL stores proxy usernames and passwords as authenticated ciphertext on each workspace's managed-proxy row.
-- Redis queue payloads store proxy credentials in plaintext by default so the checker does not perform cryptography for every check. Treat Redis as trusted runtime infrastructure.
-- `PROXY_QUEUE_ENCRYPT_CREDENTIALS=true` enables application-level queue credential encryption when its per-check cost is acceptable.
-- Encrypt PostgreSQL and Redis volumes and backups, restrict their runtime roles, and keep both services on private networks.
+Redis is trusted runtime infrastructure. `PROXY_QUEUE_ENCRYPT_CREDENTIALS=false`
+is intentional: the default checker reuses the stored route hash and performs
+no credential cryptography on every dequeue. Normal requeues update scheduling
+state without rewriting the payload.
 
-## Auth and registration hardening
+`PROXY_QUEUE_ENCRYPT_CREDENTIALS=true` opts into credential encryption for new or
+changed queue payloads and adds decryption cost on dequeue. It does not encrypt
+all Redis data or replace network and storage controls. Measure the enabled
+profile at your target throughput before choosing it. See
+[queue internals](../backend/queue-and-leases.md) and the
+[backend ADR](https://github.com/Magpie-Tools/magpie-backend/blob/main/docs/adr/0002-keep-hot-proxy-credentials-plaintext-in-redis.md).
 
-- Protected endpoints use JWT bearer auth.
-- Admin-only routes require `role=admin`.
-- Workspace-scoped routes also resolve a membership from `X-Workspace-ID` or
-  the account's default membership. Global administrator status does not imply
-  workspace membership.
-- Restrict account creation in production:
-  - `DISABLE_PUBLIC_REGISTRATION=true`
-  - enable `ENABLE_PUBLIC_FIRST_ADMIN_BOOTSTRAP=true` only during controlled bootstrap windows
-- Enforce auth-rate limiting defaults unless you have measured reasons to relax them.
-- Registration, password reset, and password change all enforce the same strong password policy.
-- User email identity is normalized and stored/enforced case-insensitively.
+## Keep secrets stable and recoverable
 
-## Password recovery hardening
+| Secret | What depends on it | Operational rule |
+| --- | --- | --- |
+| `PROXY_ENCRYPTION_KEY` | PostgreSQL credential decryption, keyed route hashes, and legacy encrypted queue payloads. | Generate once and preserve across updates, replicas, and restores. |
+| `JWT_SECRET` | Acceptance of signed login tokens. | Share one explicit value across replicas. A change invalidates tokens signed with the previous value. |
+| `/app/data/jwt_secret` | Persistent generated signing key when an explicit JWT secret is absent. | Back up `backend_data`; do not treat the container's writable layer as persistence. |
+| Database, Redis, SMTP, observability, and webhook secrets | Service access and external integrations. | Store privately, scope access, and update dependent clients when changing them. |
 
-- Password reset links are generated from fixed `PUBLIC_APP_URL` rather than request headers.
-- Reset tokens are random, single-use, short-lived, and stored only as hashes.
-- Successful password reset removes all outstanding reset tokens for the user.
-- Forgot-password and reset-password are throttled by both request volume and account identifier.
-- Default forgot-password per-email throttle is 1 request per minute.
-- Reset and confirmation emails are written to the durable DB outbox and retried asynchronously across backend instances.
+The installer generates a unique JWT secret in `.env`. A backend without one
+generates a 256-bit signing key and persists it in `/app/data/jwt_secret`.
+The obsolete published Compose JWT default is replaced by a generated key,
+invalidating sessions signed with that old value.
 
-## Workspace invitation security
+Use `STRICT_SECRET_VALIDATION=true` in production. Keep exported configuration
+and secrets out of source control and application support logs. Follow
+[Backup and recovery](./backup-and-recovery.md) before changing persistent state.
 
-- Invitations are bound to an existing user ID and can be accepted or declined only by that authenticated account.
-- No bearer token is placed in an invitation URL or email, so forwarding a notification does not transfer the offer.
-- The database invitation row is authoritative. Email is optional and an email enqueue failure never grants access or removes the pending offer.
-- Acceptance creates membership and deletes the invitation in one transaction. Pending rows are also deleted on decline, revoke, and expiry cleanup.
-- A unique database constraint permits one pending invitation per workspace and recipient account.
-- Owners can manage all invitation roles and billing access. Admins are restricted to operator/viewer invitations without billing access.
-- `PUBLIC_APP_URL` supplies the fixed inbox link in email; request headers are not trusted.
+## Separate account and workspace permissions
 
-## SMTP and transport hardening
+A JWT authenticates an account. A workspace-scoped request must also resolve a
+membership from `X-Workspace-ID` or the account's default membership. A global
+instance administrator does not automatically become a workspace member.
 
-- SMTP delivery fails closed unless TLS is established.
-- Port `587` requires successful `STARTTLS` before auth or message submission.
-- Port `465` uses implicit TLS.
-- Set `SMTP_USERNAME` and `SMTP_PASSWORD` together or leave both unset.
+```mermaid
+flowchart TD
+    accTitle: Account authentication and workspace authorization
+    accDescr: A valid bearer token identifies the account. Global administration checks the account role. A workspace request separately resolves the selected membership and checks its role before accessing resources owned by that workspace.
+    A[Bearer token] --> B{Valid account session?}
+    B -->|No| C[Reject request]
+    B -->|Yes| D{Requested operation}
+    D -->|Instance administration| E[Check global admin role]
+    D -->|Workspace resource| F[Resolve selected workspace membership]
+    F --> G[Check workspace role and resource ownership]
+    G --> H[Allow authorized operation]
+```
 
-## JWT revocation behavior
+Keep public registration disabled for a private installation. Enable
+`ENABLE_PUBLIC_FIRST_ADMIN_BOOTSTRAP=true` only during a controlled first-account
+window, then disable it and recreate the backend. Rate limits protect login,
+registration, and recovery; keep the defaults unless measurements justify a
+change.
 
-- Logout, password-change, and account-delete flows revoke existing sessions.
-- Successful password reset also revokes active sessions under normal revocation-store operation.
-- Revocation state lives in Redis.
-- Default `AUTH_REVOCATION_FAIL_OPEN=true` favors availability during Redis outage.
-- For strict security posture, set `AUTH_REVOCATION_FAIL_OPEN=false` and ensure Redis HA.
+Registration, password change, and reset enforce the same password policy.
+Email identities are normalized and enforced case-insensitively. See
+[API authentication](../api/authentication.md) for token handling and workspace
+role requirements.
 
-## Observability endpoint protection
+## Decide what a Redis outage means for sessions
 
-`/healthz`, `/readyz`, and `/metrics` are protected in production by default.
+Logout, password change, password reset, and account deletion revoke existing
+sessions through Redis under normal revocation-store operation.
+`AUTH_REVOCATION_FAIL_OPEN=true` is the default. During a Redis outage,
+a correctly signed token can remain accepted even when its revocation status
+cannot be checked.
 
-Allow access through one of:
+Set `AUTH_REVOCATION_FAIL_OPEN=false` when the deployment requires rejection of
+requests whose revocation status is unavailable. Provide Redis availability
+appropriate to that choice. This setting needs explicit container forwarding
+if your Compose file does not list it; follow
+[Apply a setting](../reference/environment-variables.md#apply-a-setting).
 
-- loopback source IP
-- `X-Observability-Token` matching `OBSERVABILITY_TOKEN`
-- explicit `ALLOW_PUBLIC_OBSERVABILITY_ENDPOINTS=true`
+## Protect recovery and invitations
 
-## Network and outbound safeguards
+Password reset links use the fixed `PUBLIC_APP_URL`, not an incoming Host header.
+Tokens are random, single use, short lived, and stored as hashes. A new reset
+request replaces the previous token, and a successful reset removes outstanding
+reset tokens. Request-volume and account-identifier limits both apply; the
+default forgot-password limit is one request per email per minute.
 
-- Restrict backend/admin API exposure behind trusted ingress.
-- Keep Postgres and Redis on private networks.
-- Outbound URL/IP validation blocks private/loopback/reserved targets by default.
-- Only set `ALLOW_PRIVATE_NETWORK_EGRESS=true` in controlled trusted environments.
+Workspace invitations are bound to an existing recipient account ID. Only that
+signed-in account can accept or decline. The notification URL contains no
+bearer token, so forwarding it does not transfer the invitation.
 
-## Proxy header trust
+The invitation row is authoritative. Acceptance creates membership and removes
+the offer in one transaction. Decline, revoke, and expiry cleanup also remove
+pending rows. A unique constraint permits one pending invitation per workspace
+and recipient. Email failure neither grants membership nor removes the offer.
+Owners can manage every invitation role and billing access; workspace admins
+can invite only operators/viewers without billing access.
 
-- Configure `TRUSTED_PROXY_CIDRS` so client IP extraction trusts forwarding headers only from known reverse proxies.
-- Avoid wildcard trust ranges such as `0.0.0.0/0`.
+Recovery, confirmation, and invitation emails use a durable PostgreSQL outbox.
+Delivery requires TLS: port 587 must complete STARTTLS before authentication
+or submission, and port 465 uses implicit TLS. Set `SMTP_USERNAME` and
+`SMTP_PASSWORD` together or leave both unset.
 
-## Browser and transport hardening
+## Restrict inbound connections
 
-- Enable security headers (`SECURITY_HEADERS_ENABLED=true`, default).
-- Keep `CORS_ALLOWED_ORIGINS` specific; do not use `*` on internet-facing deployments.
-- Terminate TLS at ingress/reverse proxy and use hardened TLS configs.
+Put the browser application behind HTTPS ingress. Keep `CORS_ALLOWED_ORIGINS`
+specific to the origins you serve. CORS is a browser request rule; it does not
+replace authentication, firewall rules, or listener access controls.
 
-## Website blacklist controls
+Configure `TRUSTED_PROXY_CIDRS` only for ingress networks you control. Otherwise
+client IP extraction can either ignore legitimate forwarding headers or trust
+spoofed ones. Avoid wildcard trust ranges such as `0.0.0.0/0`.
 
-Website blacklist helps prevent usage of blocked judge/scrape/blacklist URLs and can remove existing blocked relations.
+Keep security headers enabled with `SECURITY_HEADERS_ENABLED=true`.
+Restrict PostgreSQL and Redis to private service networks. For remote
+PostgreSQL, choose a TLS mode appropriate to the trust model: `require`
+encrypts the connection, while `verify-full` also verifies the server's
+certificate chain and hostname using a trusted CA. See
+[PostgreSQL TLS modes](https://www.postgresql.org/docs/17/libpq-ssl.html).
 
-## Browser scraping destinations
+Rotating listener ports are a separate entry point from the website. Use
+listener authentication, allowed client networks, and the transport configuration
+required by the selected protocol.
 
-HTTP fetching and browser rendering validate addresses before connecting.
-Each browser context uses a restricted local proxy. The proxy resolves the
-hostname, rejects private/reserved answers and dials the validated literal
-address. Chromium has no direct fallback or loopback bypass for that context.
-The guard covers redirects, frames, workers, subresources and HTTPS CONNECT
-tunnels. A response-address check cannot undo an outbound request and is not
-the enforcement mechanism.
+## Protect monitoring endpoints
+
+In production, `/healthz`, `/readyz`, and `/metrics` accept loopback source
+requests or a matching `X-Observability-Token` by default. Set
+`OBSERVABILITY_TOKEN` for a monitor that reaches the backend over the network.
+A host loopback connection forwarded through Docker can appear as a non-loopback
+source inside the container.
+
+`ALLOW_PUBLIC_OBSERVABILITY_ENDPOINTS=true` explicitly permits public probes.
+Prefer a private monitoring path or token rather than exposing internal health
+and metrics to every client.
+
+## Control outbound destinations
+
+Judges, scrape sources, blacklist downloads, and other outbound requests can
+reach addresses supplied through configuration. The default policy blocks
+private, loopback, and reserved destinations. Website blacklist rules can also
+reject URLs and remove existing blocked relations.
+
+For browser scraping, each context uses a restricted local proxy. It resolves
+the hostname, rejects unsafe answers, and dials the validated literal address.
+Chromium has no direct fallback or loopback bypass for that context. The guard
+covers redirects, frames, workers, subresources, and HTTPS CONNECT tunnels.
+Checking the response address after a request would be too late.
 
 Chromium's [proxy documentation](https://chromium.googlesource.com/chromium/src/+/HEAD/net/docs/proxy.md)
-explains proxy-side resolution and the explicit loopback bypass subtraction.
-`ALLOW_PRIVATE_NETWORK_EGRESS=true` remains the deliberate override for private
-sources and also changes other application outbound requests.
+explains proxy-side resolution and loopback bypass rules.
+`ALLOW_PRIVATE_NETWORK_EGRESS=true` deliberately changes the policy for private
+sources and other application outbound requests. Use it only when the backend's
+network and the people configuring destinations are trusted to reach those
+services.

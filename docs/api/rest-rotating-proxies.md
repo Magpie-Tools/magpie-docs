@@ -1,6 +1,42 @@
-# REST: Rotating Proxies
+---
+description: "Create and inspect rotating listeners, choose an instance, and test upstream selection with the REST API."
+---
+
+# REST: rotating proxies
 
 Rotating proxies expose stable listener ports and rotate through alive upstream proxies.
+
+The API configures listeners. Your application sends proxy traffic to the
+allocated listener host/port, using its listener protocol and credentials.
+The API bearer token is not a listener password.
+
+## Create and verify a listener
+
+1. Read `GET /api/rotatingProxies/instances` and select an available ID.
+2. Confirm the upstream protocol is enabled in workspace Default settings and
+   that active routes have current successful TCP evidence for it.
+3. Create the rotator with that instance ID. For access by other clients, supply
+   listener authentication with dedicated username/password values.
+4. Read the created/listed rotator's `listen_address` and allocated port.
+5. Send a real proxy request through that listener. The
+   [first curl workflow](../learn/first-proxy.md#5-create-a-rotating-listener)
+   shows an HTTP listener example.
+
+Start with broad pool filters while diagnosing eligibility, then narrow them.
+The creation example below includes uptime and reputation filters to illustrate
+their fields; those filters can legitimately leave an empty pool.
+
+## Selection behavior
+
+Only active management in the selected workspace qualifies. A route needs
+successful current TCP evidence for the upstream protocol, plus any reputation
+and uptime conditions. Listener transport does not change the current TCP
+upstream requirement. Settings refreshes can temporarily make eligibility
+unknown. See [rotation internals](../backend/rotation.md).
+
+`POST .../next` advances the persisted cursor and returns upstream credentials.
+It is a selection operation, not a read-only preview. Established CONNECT/SOCKS
+tunnels keep their upstream while they remain open.
 
 ## `GET /api/rotatingProxies`
 
@@ -62,7 +98,7 @@ Validation and behavior:
 
 - `name` required, max length 120, unique per workspace.
 - `instance_id` required and must be one of the currently available instances with free listener ports.
-- `protocol` required and must be enabled in the workspace's protocol settings.
+- `protocol` required and must be enabled in the workspace's Default protocol settings.
 - `auth_required=true` requires non-empty `auth_username` and `auth_password`.
 - `reputation_labels` supports `good`, `neutral`, `poor`.
 - Optional uptime filter requires a valid pair:
@@ -77,6 +113,11 @@ Status mapping:
 - `404`: rotator not found (delete/next)
 - `409`: conflict (name exists, or no alive proxies for next)
 - `503`: no available rotator ports / no available instances with free ports
+
+An empty instances response is not solved by retrying the same `instance_id`.
+Check heartbeat availability, the instance's stable identity, assigned listeners,
+and port capacity. A `409` from `/next` calls for inspecting route eligibility
+in that workspace.
 
 ## `GET /api/rotatingProxies/instances`
 

@@ -1,22 +1,50 @@
 # Architecture
 
+For a guided explanation with checkpoints and source links, read
+[backend internals](../backend/index.md). This page is the short system reference.
+
 Magpie is a multi-component system:
 
 - Go `1.27.2` API server (`internal/app/server` in `magpie-backend`)
 - background job routines (`internal/jobs/*` in `magpie-backend`)
 - rotating proxy listener manager (`internal/rotatingproxy` in `magpie-backend`)
-- Angular `21.1` frontend (`src/app` in `magpie-frontend`)
+- Angular `21` frontend (`src/app` in `magpie-frontend`)
+
+```mermaid
+flowchart TD
+    accTitle: Deployment components
+    accDescr: Frontend nginx forwards browser API calls to the backend. API, listeners, and workers run in one Go process with PostgreSQL and Redis. Workers and listeners make remote requests.
+    Browser["Browser"] --> Frontend["Frontend nginx + Angular"]
+    Frontend -->|"/api"| API["Go API"]
+    Client["Proxy client"] --> Listener["Go rotating listeners"]
+    subgraph Backend["One backend process"]
+        API
+        Listener
+        Workers["Checker, scraper, result consumers, jobs"]
+    end
+    API --> PG["PostgreSQL"]
+    Workers --> PG
+    Workers --> Redis["Redis"]
+    Listener --> PG
+    Workers --> Remote["Sources and judges through routes"]
+    Listener --> Upstream["Upstream proxies and targets"]
+```
 
 ## Startup flow
 
 At startup, backend:
 
-1. Loads settings from `data/settings.json` (or embedded defaults)
-2. Connects Redis and Postgres
-3. Initializes blacklist and optional redis sync hooks
-4. Loads existing proxies/sites into queues
-5. Starts rotating proxy listeners
-6. Starts periodic job routines
+1. Loads environment, production policy, and required secrets.
+2. Attempts Redis connection and starts the instance heartbeat.
+3. Loads `data/settings.json` or embedded defaults and connects PostgreSQL.
+4. Initializes blacklists, judges, compiled checker snapshots, and saved-state reconciliation.
+5. Launches queue reconstruction, asynchronously by default, and queue-loss monitoring.
+6. Starts assigned rotating listeners, workers, consumers, and periodic jobs.
+7. Opens the API. Readiness waits for dependencies and queue-bootstrap policy.
+
+`--migrate-only` runs database migrations and exits before runtime startup.
+See [startup and shutdown](../backend/startup-and-lifecycle.md) for failure,
+recovery, and ordered shutdown behavior.
 
 ## API style
 
@@ -58,6 +86,12 @@ inside a workspace. Neither is part of the current ownership path.
   lifecycle state, entitlements, usage periods, statistics, reputations,
   sources, and rotators
 - Redis provides queue/coordinator features used by runtime routines
+
+The checker hands results to a Redis statistics stream or volatile memory
+fallback. PostgreSQL commits history, latest workspace evidence, replay
+identities, and counters together. Derived reputation, source counts, and
+dashboards can refresh later. [Results and replay](../backend/results-and-storage.md)
+explains these boundaries.
 
 The global proxy-route row represents a host, port, and credential identity.
 The workspace association is a managed proxy and holds encrypted credentials,

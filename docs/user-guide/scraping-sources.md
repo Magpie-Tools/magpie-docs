@@ -2,6 +2,10 @@
 
 Scrape sources are webpage URLs Magpie fetches to discover proxies.
 
+To connect sources, tags, and checker rules into one workflow, follow
+[build a pool that maintains itself](../learn/automate-a-pool.md). Fetch status
+and the health of discovered routes are separate measurements.
+
 ## Manage sources
 
 - `GET /api/getScrapingSourcesCount`

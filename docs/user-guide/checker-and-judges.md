@@ -3,6 +3,10 @@
 Checker behavior combines global instance settings and settings owned by the
 active workspace.
 
+New to judges or protocols? Start with [How Magpie works](../learn/how-magpie-works.md).
+For request sharing, retry semantics, and workspace-specific verdicts, read
+[the backend checker chapter](../backend/checker.md).
+
 The global checker timer sets the interval between completed check cycles for a
 proxy route. Default and tag profiles choose which checks run within that cycle;
 they do not shorten the timer. Each enabled protocol can produce its own history
@@ -71,7 +75,7 @@ removed protocol, or override shared settings.
 TCP supports HTTP, HTTPS, SOCKS4, and SOCKS5. QUIC and HTTP/3 checks currently
 support HTTP and HTTPS with HTTPS judges. SOCKS checks require TCP. Magpie rejects settings whose matching tag combinations
 could leave SOCKS using QUIC or HTTP/3. Timeouts
-accept 1–65535 ms and retries accept 0–255.
+accept 1 through 65535 ms and retries accept 0 through 255.
 
 Judges, **Use HTTPS for SOCKS**, and automatic Pause/Delete settings remain
 workspace-wide. Switching profiles keeps drafts. **Save checker settings** saves all

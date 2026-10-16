@@ -56,6 +56,28 @@ Success (`200`):
 `proxy_count` is the number of waiting queue members actually rescheduled.
 It excludes leased members, including leases claimed during the operation.
 
+## Requeue one proxy {#requeue-one-proxy}
+
+`POST /api/global/proxies/{id}/requeue` requires the global admin role and
+access to the selected workspace. It reloads the managed route and queues it
+for an immediate worker visit. It does not run the check synchronously or
+wait for statistics to commit.
+
+Send your bearer token and, when needed, `X-Workspace-ID`. No body is required.
+For example, with your own token, workspace ID, and route ID:
+
+```http
+POST /api/global/proxies/123/requeue
+Authorization: Bearer <token>
+X-Workspace-ID: 42
+```
+
+Success is `200` with `{"message":"Proxy queued successfully","proxy_id":123}`.
+Invalid IDs return `400`, a missing managed route returns `404`, and queue
+synchronization failures return `503`. A successful request still requires
+active workspace management, eligible settings, judges, and functioning
+statistics ingestion for a new result to become visible.
+
 ## `GET /api/getDashboardInfo`
 
 Requires viewer or higher. Returns dashboard metrics for the selected workspace.

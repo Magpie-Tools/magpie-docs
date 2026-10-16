@@ -1,86 +1,149 @@
+---
+description: Update Magpie with the same Compose project, explicit migrations, verification, and a recoverable rollback plan.
+---
+
 # Updating
 
-## If you installed via one-command installer
+An update replaces the application images and may change the database schema.
+Plan a short maintenance window. Keep a coordinated backup of PostgreSQL,
+Redis, configuration, and keys until the new version is verified.
 
-### macOS/Linux
+If you are installing Magpie for the first time, use
+[Installation](./installation.md) instead.
+
+## Before you update
+
+1. Read the release notes for the versions you are crossing. Check the migration
+   notes below when upgrading an older installation.
+2. Record the current backend and frontend image tags or digests. A floating
+   `latest` tag alone does not identify a recoverable version.
+3. Take and verify a [coordinated backup](../operations/backup-and-recovery.md).
+4. Confirm the Compose project name, ordered file list, and installation
+   directory. They select your existing volumes and networks.
+5. Keep `PROXY_ENCRYPTION_KEY` and the JWT signing secret unchanged. Stop every
+   backend instance before migration, including replicas on other hosts.
+
+```mermaid
+flowchart TD
+    accTitle: Magpie update and recovery decisions
+    accDescr: Take a coordinated backup, stop all backends, and run the new migration. Start and verify the new stack only after migration succeeds. A failed verification may require restoring the matching backups and previous images.
+    A[Record versions and take a coordinated backup] --> B[Stop every backend instance]
+    B --> C[Run new image with --migrate-only]
+    C --> D{Migration succeeded?}
+    D -->|No| E[Keep backends stopped and inspect the error]
+    D -->|Yes| F[Start matching backend and frontend images]
+    F --> G{Verification passed?}
+    G -->|Yes| H[Resume normal use and retain backup]
+    G -->|No| I[Repair the issue or restore matching backups and images]
+```
+
+## Run the update helper
+
+For an installation created by the one-command installer, run the appropriate
+command from the installation directory.
+
+### macOS and Linux
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/Magpie-Tools/magpie/refs/heads/master/scripts/update.sh | bash
 ```
 
-### Windows (PowerShell)
+### Windows PowerShell
 
 ```powershell
 iwr -useb https://raw.githubusercontent.com/Magpie-Tools/magpie/refs/heads/master/scripts/update.ps1 | iex
 ```
 
-## If you cloned manually
-
-### macOS/Linux
+For a Git checkout of the distribution repository, use its wrapper:
 
 ```bash
 ./scripts/update-stack.sh
 ```
 
-### Windows (CMD)
+On Windows CMD:
 
 ```bat
 scripts\update-stack.bat
 ```
 
-## Compose configuration
+The bundled helpers stop the backend, run the new image's migration, and restart
+only after it succeeds. Read the output before leaving the maintenance window.
+Do not start an old backend to work around a migration failure.
 
-The Bash and PowerShell update helpers discover this installation's backend
-through Docker labels and preserve its project name, working directory and
-ordered Compose file list. This covers a name set by an overlay's `name:`, `-p`
-or `COMPOSE_PROJECT_NAME`. The name stays fixed even if downloaded configuration
-changes it, so the update keeps the existing volumes and networks.
+## Keep the same Compose configuration
 
-A stopped backend retains this metadata, so retrying a failed migration keeps
-the same project and production overlay. The helpers ignore unrelated projects
-and one-off migration containers. Missing files, an inspection failure or
-multiple matching configurations abort the update before stopping the backend.
-The Git checkout helpers use the same update logic.
+The Bash and PowerShell helpers inspect Docker labels to recover this
+installation's project name, working directory, and ordered Compose file list.
+This includes names set by an overlay's `name:`, `-p`, or
+`COMPOSE_PROJECT_NAME`. The recovered name stays fixed even if downloaded
+configuration changes it.
 
-After `docker compose down`, there is no backend metadata to recover. Persist
-the selection in `.env` before removing containers:
+A stopped backend retains these labels, so a retry after a failed migration can
+reuse the same project and production overlay. Helpers ignore unrelated
+projects and one-off migration containers. Missing files, an inspection error,
+or multiple matching configurations stop the update before the backend stops.
+The Git checkout wrappers use the same logic.
+
+After `docker compose down`, there is no backend container to inspect. Save your
+selection in `.env` before removing containers:
 
 ```dotenv
 COMPOSE_FILE=docker-compose.yml:docker-compose.production.yml
-# If you use a custom project name:
+# Set this too if the installation uses a custom project name:
 # COMPOSE_PROJECT_NAME=magpie-production
 ```
 
 Use `;` instead of `:` on Windows. Append custom overlays in their original
-order and persist a custom project name with `COMPOSE_PROJECT_NAME`. With no
-existing backend, helpers use Compose's settings from the shell or `.env`, or
-the normal default files. `MAGPIE_ENV=production` in `.env`
-also enables backend production defaults.
+order. Without an existing backend, helpers use Compose settings from the shell
+or `.env`, or the normal default files. `MAGPIE_ENV=production` also enables
+backend production defaults, but the file selection still determines mounts,
+ports, and other Compose behavior.
 
-## Key safety requirement
+## Manual production update
 
-Keep `PROXY_ENCRYPTION_KEY` stable during updates. If you rotate it unintentionally, previously encrypted data becomes unreadable.
-
-## Database migration
-
-The bundled update scripts stop the backend and run the new image's migration
-before restarting the stack. Before updating, take coordinated PostgreSQL and
-Redis backups. For a manual production update, keep the same file selection on
-every command:
+Run this Bash block from the distribution directory. Add every custom overlay
+to every command, or persist the full list through `COMPOSE_FILE`.
+The subshell exits on a failed command, leaving the backend stopped after a
+migration failure.
 
 ```bash
-docker compose -f docker-compose.yml -f docker-compose.production.yml pull
-docker compose -f docker-compose.yml -f docker-compose.production.yml stop backend
-docker compose -f docker-compose.yml -f docker-compose.production.yml run --rm backend --migrate-only
-docker compose -f docker-compose.yml -f docker-compose.production.yml up -d
+(
+  set -e
+  docker compose -f docker-compose.yml -f docker-compose.production.yml pull
+  docker compose -f docker-compose.yml -f docker-compose.production.yml stop backend
+  docker compose -f docker-compose.yml -f docker-compose.production.yml run --rm backend --migrate-only
+  docker compose -f docker-compose.yml -f docker-compose.production.yml up -d
+)
 ```
 
-Include custom overlays too. If `COMPOSE_FILE` already selects the full list,
-the `-f` arguments can be omitted.
+This stops the backend in this Compose project. Stop any other instances that
+share its database and Redis before running it. Keep all instances stopped
+until the migration finishes.
 
-Keep every backend instance stopped until the migration finishes. The proxy
-storage migration removes columns used by older backend images, so rollback
-requires the matching PostgreSQL and Redis backups.
+## Verify the new version
+
+1. Run `docker compose ps` and inspect `docker compose logs --tail=100 backend`
+   with the same file selection.
+2. Check readiness through your monitoring path. In production, send
+   `X-Observability-Token` when required.
+3. Sign in, select the expected workspace, and compare active, paused, and
+   archived proxy counts with your pre-update notes.
+4. Confirm new checks complete and scraper jobs resume. After checker settings
+   migrations, current health can stay unknown until matching evidence arrives.
+5. Test one rotating listener with the protocol and credentials your clients use.
+   Review [alerts](../user-guide/alerts.md) and outbound email if configured.
+
+Use [Troubleshooting](../operations/troubleshooting.md) for a specific failure.
+A running container alone does not prove the update succeeded.
+
+## Roll back after a schema change
+
+Restore the matching PostgreSQL and Redis backups, configuration, keys, and
+previous component images using the [recovery runbook](../operations/backup-and-recovery.md).
+Schema migrations can remove columns that older binaries need. Changing an
+image tag back is therefore insufficient after an incompatible migration.
+
+## Migration notes for older installations
 
 ### Workspace ownership migration
 
@@ -116,7 +179,7 @@ Existing checker values become shared Default settings with no tag rules.
 Earlier per-protocol draft profiles remain readable and convert to shared values
 using the first enabled Default protocol and first explicit rule fields in
 HTTP, HTTPS, SOCKS4, SOCKS5 order. If converted transports are incompatible with
-SOCKS, conversion uses TCP. Update the frontend and backend together. Legacy statistics remain available as history. Their
+SOCKS, conversion uses TCP. Legacy statistics remain available as history. Their
 transport and settings cannot be reliably attributed, so current health starts
 unknown until fresh matching checks complete. TCP rotators also wait for current
 TCP evidence. Existing failure streaks are retained.

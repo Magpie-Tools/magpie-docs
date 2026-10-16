@@ -1,4 +1,57 @@
-# REST: Proxies
+---
+description: "Import and manage proxy routes, compare health fields, and use filters, tags, lifecycle actions, and exports."
+---
+
+# REST: proxies
+
+A proxy ID identifies a shared route. Each selected workspace has its own
+management, lifecycle, tags, credentials, and applicable health evidence for
+that route. Every request on this page needs a bearer token and the
+appropriate selected-workspace role.
+
+## Follow a route through the API
+
+| Step | Request | What to inspect |
+| --- | --- | --- |
+| 1. Import a small list | `POST /api/addProxies` | Parsed/rejected counts. Acceptance does not establish health. |
+| 2. Find its ID | `GET /api/getProxyPage/1?search=...` | Host, tags, lifecycle, and `health_known`. |
+| 3. Read current detail | `GET /api/proxies/{id}` | `alive` can be null for unknown health. |
+| 4. Read evidence | `GET /api/proxies/{id}/statistics` | Protocol, transport, configuration, and result time. |
+| 5. Operate management | Lifecycle/tag endpoints below | The selected workspace changes independently of others. |
+
+For a live walkthrough, see [your first proxy workflow](../learn/first-proxy.md).
+For route identity and transaction boundaries, see
+[import internals](../backend/import-and-scraping.md).
+
+## Example import
+
+After defining the [curl client variables](rest-overview.md#first-authenticated-workflow),
+import a local text file with one route per line:
+
+```bash
+curl --silent --show-error --fail-with-body \
+  -H "Authorization: Bearer $MAGPIE_TOKEN" \
+  -H "X-Workspace-ID: $MAGPIE_WORKSPACE_ID" \
+  -F 'file=@proxies.txt' \
+  "$MAGPIE_ORIGIN/api/addProxies"
+```
+
+Let curl set multipart `Content-Type` and its boundary. Do not send the input
+as JSON. Earlier upload batches may have committed if a later batch fails;
+inspect inventory before retrying. Existing management is deduplicated and
+keeps its lifecycle state on reimport.
+
+## Interpret health correctly
+
+| Response | Alive | Dead | Unknown |
+| --- | --- | --- | --- |
+| Proxy list | `health_known: true`, `alive: true` | `health_known: true`, `alive: false` | `health_known: false`; false `alive` alone is not failure. |
+| Proxy detail | `alive: true` | `alive: false` | `alive: null`. |
+| Historical statistic | Workspace-attributed result | Workspace-attributed result | Inspect `current`; an old success need not match present settings. |
+
+Active/paused/archived describe lifecycle, independently of those health
+values. Alive/dead list filters exclude unknown evidence. Rotators also
+require the requested upstream protocol's current TCP evidence.
 
 ## `POST /api/addProxies`
 
@@ -55,7 +108,8 @@ Requires viewer or higher. Returns the selected workspace's managed-proxy count.
 
 ## `GET /api/getProxyPage/{page}`
 
-Requires auth. Returns paged proxy rows.
+Requires viewer or higher. Returns paged proxy rows. Page numbers are
+one-based. Keep the same search and filters when moving to another page.
 
 Query params:
 
@@ -168,6 +222,10 @@ automatic-tag rules. Returns `204`; proxies are not deleted.
 Replaces the selected workspace's complete tag selection for a managed proxy.
 An empty array removes every tag from that proxy.
 
+This is replacement semantics, unlike additive import and source tags. Read
+the current tag list, merge the change your client intends, then submit the
+full desired selection if you need to preserve other assignments.
+
 A later scrape can add a removed tag again if it remains configured in that
 source's automatic tags. Source rules only add missing tags and never replace
 this proxy's other assignments.
@@ -274,6 +332,10 @@ workspace manages it.
 Bulk deletion runs in batches. Affected scrape-source counts and health refresh
 once after the committed batches. If a later batch fails, earlier deletions
 remain committed; refresh the proxy list before retrying.
+
+Deletion removes this workspace's management. Pause or archive instead when
+you want to retain credentials and tags for later activation. Other workspaces
+managing the route remain independent.
 
 Mode A: selected IDs array.
 

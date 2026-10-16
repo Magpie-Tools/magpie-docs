@@ -5,7 +5,19 @@ const sidebars: SidebarsConfig = {
     'intro',
     {
       type: 'category',
-      label: 'Getting Started',
+      label: 'Learn Magpie',
+      link: {type: 'doc', id: 'learn/index'},
+      items: [
+        'learn/how-magpie-works',
+        'learn/first-proxy',
+        'learn/automate-a-pool',
+        'learn/observe-and-troubleshoot',
+        'learn/glossary',
+      ],
+    },
+    {
+      type: 'category',
+      label: 'Getting started',
       items: [
         'getting-started/quick-start',
         'getting-started/installation',
@@ -16,7 +28,7 @@ const sidebars: SidebarsConfig = {
     },
     {
       type: 'category',
-      label: 'User Guide',
+      label: 'User guide',
       items: [
         'user-guide/navigation',
         'user-guide/dashboard',
@@ -28,6 +40,22 @@ const sidebars: SidebarsConfig = {
         'user-guide/checker-and-judges',
         'user-guide/account',
         'user-guide/admin',
+      ],
+    },
+    {
+      type: 'category',
+      label: 'Backend internals',
+      link: {type: 'doc', id: 'backend/index'},
+      items: [
+        'backend/startup-and-lifecycle',
+        'backend/api-and-workspaces',
+        'backend/import-and-scraping',
+        'backend/queue-and-leases',
+        'backend/checker',
+        'backend/results-and-storage',
+        'backend/rotation',
+        'backend/background-jobs',
+        'backend/code-map',
       ],
     },
     {

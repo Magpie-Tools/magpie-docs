@@ -1,26 +1,64 @@
-# Navigation
+---
+description: "Find each Magpie screen by task and understand which workspace and administrator permissions it needs."
+---
 
-The Angular app routes map to these core views:
+# Find your way around Magpie
 
-- `/dashboard`: overview and KPIs
-- `/proxies`: proxy list and filters
-- `/proxies/:id`: proxy details and statistics
-- `/addProxies`: proxy import workflow
-- `/rotating`: rotating proxy management
-- `/scraper`: scrape source list
-- `/scraper/:id`: scrape source details and related proxies
-- `/checker/settings`: active workspace checker settings
-- `/checker/judges`: active workspace judge settings
-- `/workspace`: workspace capacity, details, members, and outgoing invitations
-- `/invitations`: pending workspace invitations for the signed-in account
-- `/account`: account and password actions
-- `/notifications`: release/build notifications
-- `/alerts`: workspace and rotator rules, delivery destinations, and incident history
+The top-bar workspace selector determines which proxies, sources, settings,
+rotators, and alerts you see. Check it first when a list looks empty or another
+member sees different data. Your account and invitation inbox span workspaces.
 
-Admin-only routes:
+## Choose a page by task
 
-- `/global/checker`
-- `/global/scraper`
-- `/global/blacklist`
-- `/plugins`
-- `/plugins/geolite`
+The paths below belong to the application, for example
+`http://localhost:5050/proxies`. The linked guides explain each task.
+
+| You want to… | Application page | Guide |
+| --- | --- | --- |
+| Read totals and trends | `/dashboard` | [Dashboard](dashboard.md) |
+| Import or organize proxy routes | `/proxies`, `/addProxies` | [Managing proxies](proxies.md) |
+| Inspect one route and its check history | `/proxies/:id` | [First proxy workflow](../learn/first-proxy.md) |
+| Discover proxies from webpages | `/scraper`, `/scraper/:id` | [Scrape sources](scraping-sources.md) |
+| Choose protocols, timeouts, and tag rules | `/checker/settings` | [Checker settings](checker-and-judges.md) |
+| Configure the URLs used to test proxies | `/checker/judges` | [Judges](checker-and-judges.md#judge-notes) |
+| Give your application a proxy listener | `/rotating` | [Rotating proxies](rotating-proxies.md) |
+| Monitor a workspace or rotator pool | `/alerts` | [Alerts](alerts.md) |
+| Inspect capacity or manage members | `/workspace` | [Workspaces](workspaces.md) |
+| Accept an offer to join a workspace | `/invitations` | [Invitations](workspaces.md#invitations) |
+| Change your password or browser accent | `/account` | [Account](account.md) |
+| Read release and build information | `/notifications` | [Updating](../getting-started/updating.md) |
+
+`:id` means a resource ID. Open a row's details to reach that page rather than
+entering the literal text `:id` in the address bar.
+
+## The usual daily workflow
+
+1. Select the workspace you intend to operate.
+2. Check its dashboard for a trend worth investigating.
+3. Open affected proxies or sources and inspect their latest evidence.
+4. Change the relevant workspace setting, then wait for new applicable checks.
+5. Confirm the usable pool on the rotator your application actually uses.
+
+The [diagnostic workflow](../learn/observe-and-troubleshoot.md) helps you find
+which stage needs attention. Refreshing the dashboard repeatedly does not
+force a new proxy check.
+
+## Pages for instance administrators
+
+| Page | Changes |
+| --- | --- |
+| `/global/checker` | Instance worker limits, cycle intervals, and defaults. |
+| `/global/scraper` | Instance scraping limits, interval, and robots policy. |
+| `/global/blacklist` | IP blacklist sources and blocked website policy. |
+| `/plugins` | Enrichment integrations. |
+| `/plugins/geolite` | GeoLite configuration. |
+| `/plugins/abuseipdb` | AbuseIPDB configuration. |
+
+These pages require the global account `admin` role. A workspace owner does
+not automatically become an instance administrator. Conversely, an instance
+administrator still needs workspace membership to read its resources.
+See [admin settings](admin.md).
+
+If a control is missing or disabled, inspect your workspace role and the
+resource's lifecycle before treating it as a loading failure. Viewers can
+read resources; operators and higher can operate them.

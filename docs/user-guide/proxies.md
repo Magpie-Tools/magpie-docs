@@ -1,5 +1,8 @@
 # Managing Proxies
 
+For a guided first run, follow [your first proxy workflow](../learn/first-proxy.md).
+This page covers the available controls and input formats.
+
 ## Import proxies
 
 `POST /api/addProxies` accepts multipart input from any combination of:
@@ -53,6 +56,9 @@ Selecting several tags matches proxies that have any selected tag. Search accept
 The proxy list uses a two-row dashboard toolbar: list actions, refresh, filters, and column controls are grouped above a full-width search field. The Tags column is always available so tags can be changed without leaving the list.
 
 The default **Actions** column opens an ellipsis menu. To use the previous inline buttons, select **Actions (buttons)** in the column picker. You can hide **Actions** or keep both columns. The buttons show Pause or Activate, Archive for paused routes, and Details, subject to your permissions. The selection is saved with your table preferences.
+
+Instance administrators can choose **Check now** for an active route to queue
+an immediate worker visit. It does not wait for the check or result commit.
 
 ## Lifecycle
 

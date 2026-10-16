@@ -1,4 +1,13 @@
+---
+description: "Query workspace data and save settings with GraphQL examples, schema guidance, and execution limits."
+---
+
 # GraphQL API
+
+GraphQL lets a client choose related fields in one request. Magpie exposes
+workspace reads and a settings mutation through it. Use REST for resource
+operations such as imports, lifecycle changes, source management, invitations,
+and listener creation. The two APIs share authentication and workspace access.
 
 ## Endpoint
 
@@ -41,6 +50,29 @@ Current schema exposes workspace-scoped data through:
 
 ## Example dashboard query
 
+Start with a small query while establishing authentication:
+
+```graphql
+query CurrentWorkspace {
+  viewer {
+    id
+    email
+    proxyCount
+    proxies(page: 1) {
+      totalCount
+      items { id ip port state healthKnown alive }
+    }
+  }
+}
+```
+
+`viewer.id` is the account ID. Workspace-scoped fields use the membership
+selected by the header. `healthKnown: false` means the current settings have
+no applicable evidence, even when the compatibility `alive` field is false.
+
+The following larger query selects dashboard data and one proxy page. Send
+`{"proxyPage": 1}` as its variables object:
+
 ```graphql
 query DashboardData($proxyPage: Int!) {
   viewer {
@@ -65,6 +97,7 @@ query DashboardData($proxyPage: Int!) {
         country
         anonymityLevel
         alive
+        healthKnown
         latestCheck
         state
         pauseReason
@@ -82,6 +115,17 @@ query DashboardData($proxyPage: Int!) {
 ```
 
 ## Update settings mutation
+
+Mutation variables use an `input` object. For a column-only change, for example:
+
+```json
+{"input":{"proxyListColumns":["ip_port","tags","country"]}}
+```
+
+This preserves workspace checker settings and changes only the authenticated
+member's columns in that workspace. A mutation that supplies `checkerSettings`
+replaces Default and all rules together. Read the current configuration before
+constructing that replacement.
 
 ```graphql
 mutation Update($input: UpdateUserSettingsInput!) {
@@ -113,7 +157,8 @@ Input fields are optional. Supported fields include the checker booleans,
 `timeout`, `retries`, `autoRemoveFailureThreshold`, `failureAction`, `judges`, and column-list
 arrays. Omitted fields retain their current values.
 
-- `timeout` accepts integers from `0` to `65535`.
+- The legacy scalar `timeout` field accepts integers from `0` to `65535`.
+  New `checkerSettings` profiles require a timeout of `1` to `65535` ms.
 - `retries` and `autoRemoveFailureThreshold` accept integers from `0` to `255`.
 - Values outside these ranges are rejected before settings are saved.
 - `failureAction` accepts `"pause"` or `"delete"`, with `"pause"` as the default.
@@ -155,8 +200,8 @@ Providing this field saves Default and rules atomically. Default requires a
 protocol-name list and shared transport, timeout, and retries. The rules list is
 highest priority first. Omitted or `null` rule fields inherit independently.
 Explicit fields apply to every enabled protocol. Remove rules contain only tag
-identity, mode, and protocol names. Timeouts accept 1–65535 ms and retries accept
-0–255. Validation, including all reachable tag combinations, and workspace tag
+identity, mode, and protocol names. Timeouts accept 1-65535 ms and retries accept
+0-255. Validation, including all reachable tag combinations, and workspace tag
 ownership checks are shared with REST. Omitting `checkerSettings` preserves rules.
 
 `viewer.settings.checkerSettings` and the settings mutation response expose the
@@ -177,7 +222,9 @@ Violations return HTTP `400` or `413` with `{"error": ...}`.
 
 ## Error format
 
-GraphQL resolver errors follow standard GraphQL response shape:
+GraphQL resolver errors follow the GraphQL response shape and can accompany
+HTTP 200. A response can also contain partial `data`. Inspect `errors` before
+using an HTTP success status as proof that every requested operation succeeded:
 
 ```json
 {
@@ -186,3 +233,6 @@ GraphQL resolver errors follow standard GraphQL response shape:
   ]
 }
 ```
+
+Authentication and guards can instead reject the request with an HTTP error
+before a resolver executes. Handle both forms. See [error handling](errors.md).

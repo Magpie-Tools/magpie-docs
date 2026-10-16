@@ -1,114 +1,182 @@
+---
+description: Diagnose startup, authentication, workspace, checker, scraping, listener, email, and build failures with concrete next steps.
+---
+
 # Troubleshooting
+
+Start with the first failing step in the workflow. A successful login does not
+prove a workspace request is authorized; a successful import does not prove a
+proxy is usable. For the complete path, see
+[Observe and troubleshoot](../learn/observe-and-troubleshoot.md).
+
+## Find the right starting point
+
+| Symptom | Start here |
+| --- | --- |
+| Backend exits or reports a dependency connection error | [Redis/PostgreSQL connectivity](#backend-cannot-connect-to-redispostgres). |
+| Browser login or registration fails | [401](#401-unauthorized-on-api-calls), [429](#429-too-many-requests-on-auth-routes), or [CORS](#registration-failed-cors-origin-is-not-allowed). |
+| Login works, selected workspace fails | [Workspace permissions](#workspace-request-returns-403). |
+| Proxies are stored but not checked | [Capacity](#proxy-activation-returns-409), then [checker workflow](../user-guide/checker-and-judges.md). |
+| A source has no new proxies | [Source outcomes](#sources-stay-empty-or-scraping-stops). |
+| A listener has no usable upstreams | [Rotating pool guide](../user-guide/rotating-proxies.md). |
+| An alert has no message | [Delivery diagnosis](../user-guide/alerts.md#diagnose-an-unsent-notification). |
+
+For a Compose installation, capture state from the installation directory using
+the same project and file selection as startup:
+
+```bash
+docker compose ps
+docker compose logs --since=10m --tail=200 backend
+```
+
+Keep the first relevant error, the component version, the time, and the action
+that triggered it. Remove tokens, passwords, proxy credentials, and private
+URLs before sharing logs. Avoid flushing Redis or deleting volumes as a general
+repair; those actions discard evidence and may remove recoverable work.
 
 ## `401 Unauthorized` on API calls
 
-Possible causes:
+1. Confirm the request includes `Authorization: Bearer <token>`. Use a current
+   token from the same Magpie installation.
+2. Sign in again. Logout, password changes, password resets, and deletion can
+   revoke an older session.
+3. If every session failed after a restart, check whether the JWT signing secret
+   changed or the generated `/app/data/jwt_secret` file was lost.
+4. In a multi-instance deployment, confirm all instances share the explicit JWT
+   secret. Alternating acceptance and rejection often indicates inconsistent
+   replicas.
 
-- Missing `Authorization: Bearer <token>`
-- Expired or invalid JWT
-- Token signed with different `JWT_SECRET`
-- Token revoked (logout/password change/password reset/account delete)
+Refresh is a token replacement operation. Coordinate clients so one refresh
+updates the token used by subsequent requests. See [Authentication](../api/authentication.md).
 
 ## `429 Too Many Requests` on auth routes
 
-Auth endpoints are rate limited.
+Read `Retry-After` and wait before retrying. Tight retry loops extend the load
+without fixing the cause.
 
-Check:
+Login and recovery apply several limits, including request-volume limits and
+account-identifier limits. The default request window is 60 seconds, and
+forgot-password allows one request per email in that window. Reset-password
+requests have their own limits.
 
-- `AUTH_*` rate-limit env values
-- response `Retry-After` header
-- whether multiple users are sharing a single untrusted proxy IP without proper `TRUSTED_PROXY_CIDRS`
-- whether forgot-password/reset-password requests are hitting identifier-based throttles in addition to request-volume throttles
-
-Common defaults:
-
-- forgot-password per-email limit: `AUTH_FORGOT_PASSWORD_LIMIT_PER_EMAIL=1`
-- forgot-password/reset-password request window: `AUTH_REQUEST_RATE_LIMIT_WINDOW_SECONDS=60`
+If many users share an ingress, check `TRUSTED_PROXY_CIDRS`. Without the correct
+trusted ingress addresses, the backend may see one proxy IP for every user.
+Do not trust every address to bypass the limit. Inspect the `AUTH_*` settings in
+the [environment reference](../reference/environment-variables.md#auth-and-registration-controls)
+after confirming the client IP path.
 
 ## Password reset email not arriving
 
-Check:
+1. Confirm SMTP is configured with `MAIL_FROM_ADDRESS`, `SMTP_HOST`, and
+   `SMTP_PORT`. Set `SMTP_USERNAME` and `SMTP_PASSWORD` together if required.
+2. Check `PUBLIC_APP_URL` matches the browser URL. It supplies reset links and
+   the fixed `/invitations` link.
+3. Check backend logs for configuration, outbox, TLS, or provider errors. The
+   forgot-password response deliberately does not reveal whether an account
+   exists, so a successful HTTP response is not delivery confirmation.
+4. Verify the provider accepts the configured sender and credentials. Port 587
+   requires STARTTLS; port 465 uses implicit TLS.
+5. If mail is queued or retrying, inspect `EMAIL_OUTBOX_*`,
+   `EMAIL_RETRY_BASE_SECONDS`, and `EMAIL_MAX_ATTEMPTS`. Wait for the worker's
+   retry instead of repeatedly requesting resets.
 
-- mail envs: `MAIL_FROM_ADDRESS`, `MAIL_FROM_NAME`, `EMAIL_BRAND_IMAGE_URL`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_USERNAME`, `SMTP_PASSWORD`
-- `PUBLIC_APP_URL` is set correctly for password-reset and `/invitations` links
-- SMTP provider accepts the sender address and credentials
-- outbox worker envs if mail is backing up or retrying (`EMAIL_OUTBOX_*`, `EMAIL_RETRY_BASE_SECONDS`, `EMAIL_MAX_ATTEMPTS`)
-- backend logs for SMTP, outbox, or configuration errors
+`MAIL_FROM_NAME` and `EMAIL_BRAND_IMAGE_URL` control presentation. If customized,
+check that their values are forwarded into the backend container.
 
-For workspace invitations, an email failure does not remove the pending offer. Check `/invitations` while signed in as the recipient and the outgoing invitation's notification status on `/workspace`. There is no manual resend action; changing role or billing access queues an “invitation changed” email without extending expiry.
+For workspace invitations, email failure does not remove the offer. Sign in as
+the recipient and open `/invitations`. The sender can inspect notification
+status on `/workspace`. There is no manual resend action. Changing the offered
+role or billing access queues an "invitation changed" message without renewing
+expiry.
 
 ## Password reset link is invalid or expired
 
-Possible causes:
+Use the most recent complete link, within
+`PASSWORD_RESET_TOKEN_TTL_MINUTES`, which defaults to 30 minutes. A token can be
+used only once, and a newer forgot-password request replaces the previous token.
+Check whether a mail client truncated or modified the URL.
 
-- token already used
-- token expired (`PASSWORD_RESET_TOKEN_TTL_MINUTES`)
-- a newer forgot-password request replaced the previous token
-- copied link was truncated or modified
+If the link is expired, request a new one and wait for that message. Do not
+continue trying older messages from the same recovery attempt.
 
 ## Registration fails in production
 
-Check registration policy envs:
+The production overlay disables public registration and first-admin bootstrap.
+For a new installation, restrict frontend access, temporarily enable
+`ENABLE_PUBLIC_FIRST_ADMIN_BOOTSTRAP=true`, and recreate the backend. Register
+the first administrator, then disable the flag and recreate again.
 
-- `DISABLE_PUBLIC_REGISTRATION`
-- `ENABLE_PUBLIC_FIRST_ADMIN_BOOTSTRAP`
+If an administrator already exists, bootstrap is not an account recovery tool.
+Use [password recovery](../user-guide/account.md#recover-a-forgotten-password)
+or have the operator review the intended registration policy. See
+[First login](../getting-started/first-login.md).
 
 ## `Registration failed: CORS origin is not allowed`
 
-Magpie's default Docker stack only allows localhost frontend origins by default.
+Set `CORS_ALLOWED_ORIGINS` to the exact origin shown in the browser, including
+scheme and any nondefault port. A NAS or remote server opened through a LAN
+address is a different origin from `localhost`.
 
-If you run Magpie on a NAS, server, or another machine and open the UI from a browser using a LAN IP or hostname, set:
+```dotenv
+CORS_ALLOWED_ORIGINS=http://nas.local:5050
+```
 
-- `CORS_ALLOWED_ORIGINS=http://<host-or-ip>:5050`
+For multiple origins, use a comma-separated list. HTTPS and HTTP are different
+origins, and paths such as `/login` do not belong in the value.
 
-Examples:
-
-- `CORS_ALLOWED_ORIGINS=http://192.168.6.143:5050`
-- `CORS_ALLOWED_ORIGINS=http://nas.local:5050`
-
-For multiple origins, use a comma-separated list.
-
-If you intentionally want to allow any origin in a trusted environment, set:
-
-- `CORS_ALLOWED_ORIGINS=*`
+Recreate the backend after changing its environment. A plain container restart
+does not apply a changed Compose environment. Reload the page and retry. Use
+specific origins for the application rather than opening the allowlist to all
+sites.
 
 ## `403 Forbidden` on `/healthz`, `/readyz`, or `/metrics`
 
-Observability protection is active.
+Production observability protection is active. Send
+`X-Observability-Token` with the configured `OBSERVABILITY_TOKEN`, or use a path
+whose source address is loopback inside the backend's network namespace.
+A request to the host's `127.0.0.1:5656` can arrive from a Docker bridge address
+inside the container and still require the token.
 
-Use one of:
-
-- loopback request path
-- valid `X-Observability-Token`
-- `ALLOW_PUBLIC_OBSERVABILITY_ENDPOINTS=true`
+For a deliberate public probe policy, `ALLOW_PUBLIC_OBSERVABILITY_ENDPOINTS=true`
+is an explicit override. The production overlay forces protection, so changing
+that deployment needs a later custom overlay. Prefer a token or private monitor
+path. A `503` from `/readyz` is a dependency/bootstrap problem; it differs from
+an authorization failure.
 
 ## `413 Request Entity Too Large`
 
-Request exceeded configured limits.
+Compare the upload size with `API_UPLOAD_MAX_BODY_BYTES`, JSON size with
+`API_JSON_MAX_BODY_BYTES`, and GraphQL query size with `GRAPHQL_MAX_QUERY_BYTES`.
+Check any external ingress request limit too.
 
-Check:
-
-- `API_UPLOAD_MAX_BODY_BYTES`
-- `API_JSON_MAX_BODY_BYTES`
-- `GRAPHQL_MAX_QUERY_BYTES`
+Split large imports when practical. If increasing a limit, forward the value
+into the backend, recreate it, and consider the resulting memory and temporary
+storage use. Increasing multipart memory alone does not increase the total body
+limit.
 
 ## GraphQL request rejected before resolver
 
-Possible guard violations:
+Check query depth against `GRAPHQL_MAX_DEPTH`, expanded field count against
+`GRAPHQL_MAX_FIELDS`, and query bytes against `GRAPHQL_MAX_QUERY_BYTES`.
+Introspection is disabled by default through `GRAPHQL_ALLOW_INTROSPECTION=false`.
 
-- query depth exceeds `GRAPHQL_MAX_DEPTH`
-- field count exceeds `GRAPHQL_MAX_FIELDS`
-- introspection is disabled (`GRAPHQL_ALLOW_INTROSPECTION=false`)
+Reduce the selected fields or split the operation first. A JSON `errors` array
+can also arrive with HTTP 200 after execution; inspect it before using partial
+`data`. See [GraphQL](../api/graphql.md).
 
 ## Rotating proxy creation fails
 
-Possible causes:
+Check the selected workspace and role, then the reported validation error:
 
-- protocol not enabled for the selected workspace
-- name conflict within the selected workspace
-- missing auth fields when auth required
-- no free listener ports in configured range
-- selected instance unavailable or out of ports
+- Enable the requested protocol in that workspace's checker settings.
+- Use a name unique within the workspace.
+- Supply both listener username and password when authentication is required.
+- Select an available instance with a free port in its configured range.
+
+If creation succeeds but clients cannot connect, check the host port publication
+and firewall for that exact instance and transport. If clients connect but get
+no upstream route, inspect current TCP health and pool filters in the
+[rotator guide](../user-guide/rotating-proxies.md).
 
 ## Workspace request returns `403`
 
@@ -120,8 +188,12 @@ membership, or select a valid workspace in the top bar.
 ## Proxy activation returns `409`
 
 The selected workspace has reached its finite active-route capacity. Pause or
-archive another managed proxy before activating this one. The blocked proxy
-remains stored.
+archive another active managed proxy, then activate the intended route. The
+blocked proxy remains stored. Confirm the active count and limit on the
+workspace page; total stored count includes paused and archived routes.
+
+If an import succeeds with fewer active routes than imported lines, inspect
+lifecycle states. Overflow routes can be stored as paused for capacity.
 
 ## The same proxy is checked every few seconds
 
@@ -144,27 +216,63 @@ instances for tests and benchmarks.
 
 ## Scrape source rejected
 
-Possible causes:
+Read the source error. A website blacklist match and an outbound-address policy
+failure need different fixes. Private, loopback, link-local, and reserved targets
+are blocked by default, including addresses obtained through DNS.
 
-- URL appears in `website_blacklist`
-- URL resolves to unsafe private/loopback/reserved target while `ALLOW_PRIVATE_NETWORK_EGRESS=false`
+Check the configured URL and the destination it resolves to. For an intentional
+internal source, the operator can evaluate `ALLOW_PRIVATE_NETWORK_EGRESS=true`
+in a trusted deployment. That override affects other application outbound
+requests too. It should not be used to mask an unexpected DNS destination.
 
 ## Old data not decrypting after restart/update
 
-Likely cause: `PROXY_ENCRYPTION_KEY` changed.
+Compare the deployment's `PROXY_ENCRYPTION_KEY` with the original value in your
+secret store or coordinated backup. Stop the affected backends and restore the
+original key before restarting them. A new key cannot decrypt old credentials
+and also changes keyed route identities.
 
-Fix: restart with previous key.
+If the original key is missing, preserve the volumes and backups while locating
+it. Repeatedly generating replacement keys cannot repair the ciphertext. See
+[Backup and recovery](./backup-and-recovery.md).
 
 ## Backend cannot connect to Redis/Postgres
 
-Check effective env values:
+1. Check service state and the first backend connection error. Distinguish DNS,
+   connection refusal, authentication, and TLS errors.
+2. Use container addresses inside Compose: `postgres:5432` and `redis:6379`.
+   A backend running directly on the host uses the published loopback ports,
+   normally `5434` and `8946`. `localhost` inside a container is that container.
+3. Check effective DB settings: `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USERNAME`,
+   `DB_PASSWORD`, and `DB_SSLMODE`. The bundled PostgreSQL does not enable TLS;
+   its internal Compose connection uses `disable`. A remote database may require
+   a different TLS mode and CA configuration.
+4. Check Redis mode, URL, credentials, and Sentinel settings. `REDIS_URL` takes
+   precedence over the legacy `redisUrl` fallback when both are present.
+5. Confirm the variable reaches the process. Compose's `.env` is used for
+   substitution; unlisted values need explicit forwarding. A Go process uses
+   its own environment and working-directory `.env`.
 
-- Redis: `REDIS_MODE`, `REDIS_URL` / `redisUrl`, plus sentinel vars in sentinel mode
-- DB: `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USERNAME`, `DB_PASSWORD`, `DB_SSLMODE`
+Changing `DB_PASSWORD` in Compose does not update a role in an already initialized
+PostgreSQL volume. Reconcile the actual database role and client credential
+through the database administrator; do not remove the volume to reset it.
+See [Apply a setting](../reference/environment-variables.md#apply-a-setting).
 
 ## Build or install dependency issues
 
-Delete `node_modules` and lockfile in the affected workspace and reinstall.
+Use the repository's committed lockfile and supported toolchain. From the
+frontend or docs repository:
+
+```bash
+npm ci
+npm run build
+```
+
+`npm ci` replaces `node_modules` using `package-lock.json`. Keep the lockfile;
+deleting it changes the dependency graph and can hide the original problem.
+For backend failures, compare `go version` with the version declared in
+`magpie-backend/go.mod`, then rerun the failing command. See
+[Testing](../contributing/testing.md) for repository-specific checks.
 
 ## Sources stay empty or scraping stops
 

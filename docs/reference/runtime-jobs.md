@@ -2,6 +2,23 @@
 
 Magpie starts several long-running routines on backend startup.
 
+For the guided explanation of coordination and replicas, see
+[background jobs](../backend/background-jobs.md). This reference records the
+routine families, intervals, and limits.
+
+## How the jobs fit together
+
+| Family | Purpose | Where to understand it |
+| --- | --- | --- |
+| Producers | Discover routes, check them, collect enrichment, and record traffic usage. | [Import](../backend/import-and-scraping.md), [checker](../backend/checker.md), [rotation](../backend/rotation.md). |
+| Consumers and derived views | Commit check batches, update usage, refresh reputation, source counts, and dashboards. | [Results and storage](../backend/results-and-storage.md). |
+| Evaluation and delivery | Read existing measurements, track incidents, and send durable outbox messages. | [Alerts](../user-guide/alerts.md). |
+| Maintenance and recovery | Retain bounded history, reclaim work, expire old records, and rebuild lost queues. | [Startup and recovery](../backend/startup-and-lifecycle.md). |
+
+Shutdown stops producers first, then consumers, then read-model refreshes.
+Coordination differs by routine: queue leases, stream consumer groups, Redis
+leadership, and PostgreSQL delivery claims solve different problems.
+
 ## Core routines
 
 - judge refresh routine
@@ -98,7 +115,7 @@ the final managed association cannot erase recent failures.
 
 The opt-in backend test `TestAlertsScaleCadencePostgres` validates six consecutive
 passes for 2,000 workspaces with 100 rules each. On two-CPU PostgreSQL 17 with
-`GOMAXPROCS=2`, all 200,000 rules completed each pass in 19–30 seconds with one
+`GOMAXPROCS=2`, all 200,000 rules completed each pass in 19 to 30 seconds with one
 destination per rule. This includes opening and recovering every incident and
 queuing 400,000 notification records. The backend alert ADR records the exact
 workload and command. Projection size, history volume, pool filters, notification

@@ -2,6 +2,20 @@
 
 Global config is modeled by `config.Config` and persisted in `data/settings.json`.
 
+## Which kind of setting are you changing?
+
+| Kind | Stored in | Examples |
+| --- | --- | --- |
+| Deployment | Environment, usually supplied through `.env` and Compose | Database/Redis connections, secrets, upload limits. |
+| Instance behavior | Backend `data/settings.json` | Worker limits, checker/scraper intervals, blacklist and plugin configuration. |
+| Workspace behavior | PostgreSQL workspace settings | Default/tag checker profiles, judges, failure actions. |
+| Member display preferences | PostgreSQL member preferences | Selected columns in a workspace's tables. |
+
+This page covers instance behavior. Use [environment variables](environment-variables.md)
+for deployment and [checker settings](../user-guide/checker-and-judges.md) for
+workspace behavior. The [API and ownership chapter](../backend/api-and-workspaces.md)
+explains why these owners differ.
+
 Default values come from `internal/config/default_settings.json` in
 `magpie-backend`.
 
@@ -12,7 +26,7 @@ Default values come from `internal/config/default_settings.json` in
 - `scraper`
 - `proxy_limits`
 - `runtime`
-- `geolite`
+- `plugins`, including `geolite` and `abuseipdb`
 - `blacklist_timer`
 - `blacklist_sources`
 - `website_blacklist`

@@ -1,4 +1,51 @@
-# REST: Scraping Sources
+---
+description: "Add scraping sources, inspect fetch outcomes, configure browser mode, and manage source scheduling."
+---
+
+# REST: scrape sources
+
+A source is a webpage subscription. Its saved settings and automatic tags
+belong to the selected workspace. The source's last fetch outcome is separate
+from the health of routes it discovers.
+
+## Add, inspect, and adjust a source
+
+1. Check the URL's robots allowance if the instance respects `robots.txt`.
+2. Upload the URL with `fetch_mode=http` for static content, or `browser`
+   when JavaScript must generate the proxy list.
+3. Read the source list and open its returned ID for the last attempt status.
+4. Read `.../{id}/proxies` to inspect discovered management and check health.
+5. PATCH only settings you intend to change. Existing subscriptions retain
+   their fetch mode and automatic tags when uploaded again.
+
+Example, using the [curl client variables](rest-overview.md#first-authenticated-workflow):
+
+```bash
+curl --silent --show-error --fail-with-body \
+  -H "Authorization: Bearer $MAGPIE_TOKEN" \
+  -H "X-Workspace-ID: $MAGPIE_WORKSPACE_ID" \
+  -F 'scrapeSourceTextarea=https://lists.example.test/proxies.txt' \
+  -F 'fetch_mode=http' \
+  "$MAGPIE_ORIGIN/api/scrapingSources"
+```
+
+Replace the reserved example URL with a permitted real source. Curl supplies
+the multipart boundary. The scraper currently extracts IPv4 proxy routes;
+manual proxy import also accepts hostnames and IPv6.
+
+## Read scrape status before proxy health
+
+| `last_scrape_status` | Meaning |
+| --- | --- |
+| Empty string | No completed attempt in the current fetch mode. |
+| `success` | Allowed proxies were found and processed. |
+| `empty` | Fetching completed but no allowed proxies were extracted. |
+| `error` | Fetching or processing failed; inspect `last_scrape_error`. |
+| `blocked` | Robots policy blocked the attempt. |
+
+`last_scraped_at` identifies the attempt start time. A successful scrape does
+not imply its proxies are alive. A fetch-mode change clears the previous
+status, while a tag-only update preserves it.
 
 ## `GET /api/getScrapingSourcesCount`
 
@@ -10,7 +57,7 @@ Requires viewer or higher. Returns paged source summaries for the selected works
 
 Query parameters:
 
-- `pageSize`: 1–100, defaults to 40.
+- `pageSize`: 1 through 100, defaults to 40.
 - `search`: source URL search.
 - `protocol`: repeat for multiple protocols, `http` or `https`.
 - `proxyCount`, `proxyCountOperator`, `aliveCount`, `aliveCountOperator`: positive count thresholds with `>` or `<`.

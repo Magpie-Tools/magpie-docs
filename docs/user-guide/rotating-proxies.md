@@ -2,6 +2,11 @@
 
 Rotating proxies let you expose stable listener endpoints while Magpie rotates upstream proxies from your healthy pool.
 
+For a guided setup and curl request, follow
+[your first proxy workflow](../learn/first-proxy.md#5-create-a-rotating-listener).
+The [rotation internals chapter](../backend/rotation.md) explains current TCP
+evidence, cursor selection, and tunnel behavior.
+
 ## Endpoints
 
 - `GET /api/rotatingProxies`
@@ -14,6 +19,7 @@ Rotating proxies let you expose stable listener endpoints while Magpie rotates u
 ```json
 {
   "name": "residential-good",
+  "instance_id": "your-backend-instance-id",
   "protocol": "http",
   "listen_protocol": "http",
   "transport_protocol": "tcp",
@@ -23,9 +29,14 @@ Rotating proxies let you expose stable listener endpoints while Magpie rotates u
 }
 ```
 
+Use an actual instance ID returned by `GET /api/rotatingProxies/instances`.
+The UI's instance selector uses this list. It includes instances with free
+listener ports; the example string above is a placeholder.
+
 ## Validation behavior
 
 - `name` is required and max length is 120
+- `instance_id` must select an available backend instance with free listener ports
 - `protocol` must be enabled in the active workspace's Default settings
 - `auth_required=true` requires both username and password
 - listener ports are allocated from configured rotating port range

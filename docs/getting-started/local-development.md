@@ -10,7 +10,7 @@
 The application components are maintained in separate repositories:
 
 - `magpie-backend`: Go `1.27.2`
-- `magpie-frontend`: Angular `21.1`, PrimeNG `21`, Tailwind CSS `4`
+- `magpie-frontend`: Angular `21`, PrimeNG `21`, Tailwind CSS `4`; use the exact dependency versions in `package.json` and the lockfile.
 - `magpie-docs`: Docusaurus on Node.js `20+`
 
 Clone the repositories as siblings so commands and tooling have a predictable
@@ -37,12 +37,38 @@ docker compose up -d postgres redis
 
 ## Run backend
 
+The backend loads `.env` from its own working directory. The distribution's
+`.env` is not automatically loaded by a Go process in the sibling repository.
+Create `magpie-backend/.env` in your editor with the matching values:
+
+```dotenv
+DB_HOST=127.0.0.1
+DB_PORT=5434
+DB_NAME=magpie
+DB_USERNAME=magpie_user
+DB_PASSWORD=replace-with-the-distribution-database-password
+DB_SSLMODE=disable
+REDIS_URL=redis://127.0.0.1:8946
+PROXY_ENCRYPTION_KEY=replace-with-the-same-stable-key-as-the-distribution
+DB_AUTO_MIGRATE=false
+```
+
+Match database name and username too if you changed them in the distribution.
+The host ports differ from container ports: local processes use PostgreSQL
+`5434` and Redis `8946`; containers on the Compose network use `5432` and
+`6379`. Keep `.env` private and out of commits.
+
+Migrate from the backend repository before the first normal start:
+
 ```bash
 cd ../magpie-backend
+go run ./cmd/magpie --migrate-only
 go run ./cmd/magpie
 ```
 
 Backend defaults to port `5656`.
+
+For the runtime reading path, open [backend internals](../backend/index.md).
 
 ## Run frontend
 
