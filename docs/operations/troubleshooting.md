@@ -177,6 +177,9 @@ Browser sources share a bounded Chromium instance per backend. Its default
 concurrency is four. Capacity failures and browser outages are retried without
 blocking workers waiting for a page. Cleanup has a two-second deadline and an
 unresponsive browser is discarded; startup failures back off for 30 seconds.
+Network failures for optional resources such as images leave valid proxy HTML
+and concurrent browser scrapes usable. Main-document failures and outbound
+policy violations still fail the scrape.
 
 If browser failures persist, check backend logs for `scrape failed` entries,
 Chromium launch errors, and container memory pressure. HTTP sources continue

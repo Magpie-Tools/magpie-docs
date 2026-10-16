@@ -105,8 +105,11 @@ must also be writable by 65532 and should use mode 0700.
 
 On SIGTERM, the API drains first. The backend then stops producers, waits for
 checker/scraper workers and rotating clients, and lets usage/statistics consumers
-finish their final flush before closing Redis. The default API drain timeout is
-20 seconds; `BACKGROUND_SHUTDOWN_TIMEOUT_SECONDS` allows another 60 seconds.
+finish their final flush. After statistics and reputation writers stop, read
+models refresh proxy filters, then drain all queued scrape-source statistics
+batches before Redis closes. This keeps both proxy filters and source health
+counters current after restart. The default API drain timeout is 20 seconds;
+`BACKGROUND_SHUTDOWN_TIMEOUT_SECONDS` allows another 60 seconds.
 Compose's `BACKEND_STOP_GRACE_PERIOD` defaults to 90 seconds. Keep it longer than
 the sum of both timeouts when changing them. Redis stream entries still pending
 at shutdown remain available for replay; a failed memory flush has no durable

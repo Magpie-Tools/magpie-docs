@@ -34,7 +34,7 @@ Values `prod` or `production` are treated as production.
 - `EXPORT_PROXY_READ_TIMEOUT_SECONDS` (default `310`, frontend container): nginx timeout between reads from the proxy export endpoint, including the initial response. Keep this at least 10 seconds above `PROXY_EXPORT_TIMEOUT_SECONDS`. Compose passes both export settings from `.env`; recreate backend and frontend containers after changing them. Configure any external reverse proxy accordingly.
 - `SERVER_IDLE_TIMEOUT_SECONDS` (default `120`)
 - `SERVER_SHUTDOWN_TIMEOUT_SECONDS` (default `20`): graceful API drain timeout.
-- `BACKGROUND_SHUTDOWN_TIMEOUT_SECONDS` (default `60`): time to stop producers and finish final usage/statistics flushes after API drain.
+- `BACKGROUND_SHUTDOWN_TIMEOUT_SECONDS` (default `60`): time to stop producers, finish usage/statistics writes, and drain filter/source read models after API drain.
 - `BACKEND_STOP_GRACE_PERIOD` (Compose default `90s`): container grace period; keep it above the sum of the API and background timeouts.
 - `BACKEND_BIND_ADDRESS` (Compose default `127.0.0.1`): host address for the API port binding.
 - `API_UPLOAD_MAX_BODY_BYTES` (default `10485760`, 10 MiB): max request size for multipart upload endpoints.

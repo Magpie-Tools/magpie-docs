@@ -93,7 +93,11 @@ existing owners and one added owner. Compare its cost separately from ordinary
 plaintext queue throughput.
 
 On shutdown, the backend waits for producers to stop before canceling usage
-and statistics consumers, and keeps Redis open until their final work finishes.
+and statistics consumers. After statistics and reputation writers stop, read
+models refresh proxy filters, then drain all queued scrape-source statistics
+batches. Redis stays open until these stages finish. The SIGTERM regression
+checks both proxy filters and source counters in stream and memory modes, with
+more source associations than fit in one refresh batch.
 Statistics stream workers leave unacknowledged entries pending for
 recovery. The ledger prevents committed entries from counting twice. Pending
 entries from another consumer become recoverable after at least one minute idle.
