@@ -78,6 +78,7 @@ const sidebars: SidebarsConfig = {
         'api/rest-auth-and-user',
         'api/rest-workspaces',
         'api/rest-alerts',
+        'api/rest-notifications',
         'api/rest-proxies',
         'api/rest-rotating-proxies',
         'api/rest-scraping-sources',

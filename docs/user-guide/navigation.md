@@ -13,6 +13,20 @@ newest first. It combines pending workspace invitations, incidents in the
 selected workspace, and Magpie releases. The order uses the invitation's creation
 time, the incident's opening time, or the release's publication time.
 
+The badge counts unread items among those five notifications. Unread rows have a
+dot and stronger text. Selecting a notification marks only that event as read;
+opening the menu or using its footer links does not mark events as read. Read
+items stay in their original time order.
+
+Read status belongs to your account and is saved on the server, so it survives
+sign-out, restarts, and use in another browser. The menu checks it when opened or
+refreshed and when you return to the browser. Reading an invitation does not
+accept it, and reading an alert does not close the incident.
+
+The releases page uses the same account read status. Opening release notes marks
+that release as read, and **Mark all as read** marks the releases shown in the
+archive without marking invitations or alerts.
+
 Select an item to open the invitation inbox, alert history, or that release's
 notes. Invitation and alert notifications scroll to the matching invitation or
 incident and highlight it for three seconds. **Workspace invitations** stays available at the bottom of the menu,

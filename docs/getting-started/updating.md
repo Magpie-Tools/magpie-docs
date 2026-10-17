@@ -145,6 +145,14 @@ image tag back is therefore insufficient after an incompatible migration.
 
 ## Migration notes for older installations
 
+### Notification read status
+
+The notification update adds `notification_reads` through the normal
+`--migrate-only` step. Update the backend and frontend together. Read receipts
+are account data in PostgreSQL and need no extra volume or environment setting.
+Existing notifications start unread; opening an item saves its read status for
+every browser signed in to that account.
+
 ### Workspace ownership migration
 
 The workspace release performs an ownership-boundary migration:

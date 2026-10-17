@@ -23,6 +23,7 @@ secrets according to [backup and recovery](../operations/backup-and-recovery.md)
 Primary persistent store for:
 
 - user accounts and global instance roles
+- per-account notification read receipts
 - workspaces, memberships, pending workspace invitations, workspace roles, and member preferences
 - subscription entitlements and monthly usage periods
 - proxy routes, workspace-managed proxies, and lifecycle state
@@ -92,6 +93,12 @@ batches. Membership rows never contain capacity.
 `workspace_invitations` contains only live, account-bound offers. Each row stores the workspace, recipient account, requested access, expiry, notification state, and an inviter email snapshot. The inviter foreign key is nullable so the workspace can continue to manage the invitation after the inviter leaves. Acceptance, decline, revoke, and expiry cleanup delete the row; Magpie does not retain invitation history.
 
 The durable email outbox carries optional invitation notifications independently of invitation persistence. Outbox delivery state never controls whether an invitation can be accepted.
+
+`notification_reads` stores the account ID, source-prefixed event ID, and first
+read time. A unique account/event key makes repeated clicks idempotent. These
+receipts survive browser changes and backend restarts and are deleted with the
+account. They contain no invitation, incident, or release content. Their writes
+come from notification clicks, outside checker and queue processing.
 
 ## Redis
 
