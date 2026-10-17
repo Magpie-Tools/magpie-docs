@@ -13,8 +13,10 @@ The API bearer token is not a listener password.
 ## Create and verify a listener
 
 1. Read `GET /api/rotatingProxies/instances` and select an available ID.
-2. Confirm the upstream protocol is enabled in workspace Default settings and
-   that active routes have current successful TCP evidence for it.
+2. Choose a supported upstream protocol. To serve traffic, active routes need
+   current successful TCP evidence for it, with checks enabled through Default
+   settings or matching tag rules. You can create the listener before that pool
+   is ready.
 3. Create the rotator with that instance ID. For access by other clients, supply
    listener authentication with dedicated username/password values.
 4. Read the created/listed rotator's `listen_address` and allocated port.
@@ -98,7 +100,7 @@ Validation and behavior:
 
 - `name` required, max length 120, unique per workspace.
 - `instance_id` required and must be one of the currently available instances with free listener ports.
-- `protocol` required and must be enabled in the workspace's Default protocol settings.
+- `protocol` required and must be `http`, `https`, `socks4`, or `socks5`. Creation does not require it to be enabled in Default checker settings or have healthy upstream proxies yet.
 - `auth_required=true` requires non-empty `auth_username` and `auth_password`.
 - `reputation_labels` supports `good`, `neutral`, `poor`.
 - Optional uptime filter requires a valid pair:

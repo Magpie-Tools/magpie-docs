@@ -37,9 +37,15 @@ listener ports; the example string above is a placeholder.
 
 - `name` is required and max length is 120
 - `instance_id` must select an available backend instance with free listener ports
-- `protocol` must be enabled in the active workspace's Default settings
+- `protocol` must be one of `http`, `https`, `socks4`, or `socks5`, independently of the workspace's Default checker settings
 - `auth_required=true` requires both username and password
 - listener ports are allocated from configured rotating port range
+
+You can create a rotator before enabling checks or building a healthy proxy pool.
+If Default checker settings have no enabled protocols, the UI shows a warning
+and still allows creation. The rotator can serve traffic once healthy upstream
+proxies are available for its selected protocol. Enable checks in Default
+settings or a matching tag rule.
 
 ## Protocol and transport notes
 

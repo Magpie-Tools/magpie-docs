@@ -58,10 +58,13 @@ qualify a TCP upstream. A pending checker-settings projection suppresses
 current eligibility. Legacy generation-zero fixtures retain their compatibility
 path, separate from normal attributed health.
 
-Rotator creation requires its upstream protocol to be enabled in workspace
-Default settings. A matching tag rule can still remove that protocol from
-particular routes or change their checker transport, excluding those routes.
-Uptime filters use the workspace's matching TCP evidence too.
+Rotator creation accepts any supported upstream protocol, even when workspace
+Default settings disable all checks or the pool is empty. The UI warns when
+Default has no enabled protocols, but still allows creation. Enable checks in
+Default settings or matching tag rules to build a usable pool. A tag rule can
+also remove a protocol from particular routes or change their checker transport,
+excluding those routes. Uptime filters use the workspace's matching TCP evidence
+too.
 
 ## What selection does and does not guarantee
 

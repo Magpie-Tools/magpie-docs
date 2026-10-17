@@ -122,7 +122,8 @@ Open `/rotating` and create a rotator:
 1. Give it a name such as `First run`.
 2. Select an available backend instance.
 3. Choose HTTP for the listener and TCP transport for this example. Choose an
-   upstream protocol that your route supports and Default enables.
+   upstream protocol that your route supports. Its checks can be enabled in
+   Default settings or a matching tag rule.
 4. Start without reputation or uptime restrictions so you can verify basic
    eligibility. You can narrow the pool after that works.
 5. Enable listener authentication and choose dedicated client credentials.
