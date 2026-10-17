@@ -69,12 +69,6 @@ const config: Config = {
       },
       items: [
         {
-          type: 'docSidebar',
-          sidebarId: 'docsSidebar',
-          position: 'left',
-          label: 'Docs',
-        },
-        {
           to: '/learn/',
           label: 'Learn Magpie',
           position: 'left',

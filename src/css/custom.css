@@ -1,10 +1,3 @@
-/**
- * Any CSS included here will be global. The classic template
- * bundles Infima by default. Infima is a CSS framework designed to
- * work well for content-centric websites.
- */
-
-/* You can override the default Infima variables here. */
 :root {
   --ifm-color-primary: #2e8555;
   --ifm-color-primary-dark: #29784c;
@@ -15,9 +8,28 @@
   --ifm-color-primary-lightest: #3cad6e;
   --ifm-code-font-size: 95%;
   --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.1);
+
+  /* Match the frontend shell while keeping the document typography intact. */
+  --doc-sidebar-width: 240px;
+  --ifm-navbar-height: 3.5rem;
+  --ifm-navbar-shadow: none;
+  --docs-brand-height: 5.15rem;
+  --docs-chrome: #f8faf9;
+  --docs-border: rgba(26, 44, 36, 0.14);
+  --docs-muted: #57645e;
+  --docs-foreground: #182b22;
+  --docs-accent: #27634d;
+  --docs-accent-rgb: 52, 133, 102;
+  --docs-active-bg: rgba(26, 44, 36, 0.07);
+  --docs-hover: rgba(26, 44, 36, 0.045);
+  --docs-panel: #f4f4f5;
+  --docs-shadow: 0 20px 40px rgba(26, 44, 36, 0.06);
+  --docs-workspace:
+    radial-gradient(circle at 74% 1%, rgba(205, 158, 191, 0.12), transparent 34rem),
+    radial-gradient(circle at 18% 48%, rgba(52, 133, 102, 0.09), transparent 32rem),
+    linear-gradient(145deg, #f1eef2, #edf2ef 50%, #f5f4f6);
 }
 
-/* For readability concerns, you should choose a lighter palette in dark mode. */
 [data-theme='dark'] {
   --ifm-color-primary: #25c2a0;
   --ifm-color-primary-dark: #21af90;
@@ -27,6 +39,282 @@
   --ifm-color-primary-lighter: #32d8b4;
   --ifm-color-primary-lightest: #4fddbf;
   --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.3);
+
+  --docs-chrome: #111113;
+  --docs-border: rgba(239, 229, 237, 0.15);
+  --docs-muted: rgba(255, 255, 255, 0.62);
+  --docs-foreground: rgba(255, 255, 255, 0.96);
+  --docs-accent: #8cc8b5;
+  --docs-active-bg: rgba(255, 255, 255, 0.075);
+  --docs-hover: rgba(255, 255, 255, 0.045);
+  --docs-panel: #161619;
+  --docs-shadow: 0 20px 40px rgba(4, 4, 6, 0.22), inset 0 1px rgba(255, 255, 255, 0.035);
+  --docs-workspace:
+    radial-gradient(circle at 74% 1%, rgba(205, 158, 191, 0.2), transparent 34rem),
+    radial-gradient(circle at 18% 48%, rgba(52, 133, 102, 0.12), transparent 32rem),
+    linear-gradient(145deg, #444045, #1f2022 50%, #2c2b2e);
+}
+
+/* Top bar and the mobile navigation drawer. */
+.navbar {
+  border-bottom: 1px solid var(--docs-border);
+  background: var(--docs-chrome);
+  color: var(--docs-muted);
+  box-shadow: 0 0.8rem 2.8rem rgba(0, 0, 0, 0.1);
+}
+
+.navbar__brand {
+  gap: 0.72rem;
+  color: var(--docs-foreground);
+}
+
+.navbar__logo {
+  display: grid;
+  width: 2.55rem;
+  height: 2.55rem;
+  margin: 0;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 0.82rem;
+  background: linear-gradient(0deg, rgba(var(--docs-accent-rgb), 0.16), transparent 45%);
+  box-shadow: 0 0.7rem 1.8rem rgba(0, 0, 0, 0.12), inset 0 1px rgba(255, 255, 255, 0.07);
+}
+
+.navbar__logo img {
+  width: 1.72rem;
+  height: 1.72rem;
+}
+
+.navbar__title {
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.025em;
+}
+
+.navbar__link {
+  padding: 0.55rem 0.75rem;
+  border-radius: 0.5rem;
+  color: var(--docs-muted);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  transition: color 0.2s ease, background-color 0.2s ease;
+}
+
+.navbar__link:hover {
+  background: var(--docs-hover);
+  color: var(--docs-foreground);
+}
+
+.navbar__link--active,
+.navbar__link--active:hover {
+  background: var(--docs-active-bg);
+  color: var(--docs-foreground);
+}
+
+.navbar .clean-btn {
+  border-radius: 0.76rem;
+  color: var(--docs-muted);
+}
+
+.navbar .clean-btn:hover {
+  background: var(--docs-hover);
+  color: var(--docs-accent);
+}
+
+.navbar-sidebar {
+  background: var(--docs-chrome);
+  color: var(--docs-foreground);
+  box-shadow: 1.5rem 0 4rem rgba(0, 0, 0, 0.32);
+}
+
+.navbar-sidebar__brand {
+  border-bottom: 1px solid var(--docs-border);
+  box-shadow: none;
+}
+
+.navbar-sidebar__back {
+  background: var(--docs-hover);
+  color: var(--docs-muted);
+  font-size: 0.8125rem;
+}
+
+/* Full-height sidebar with the frontend's rounded navigation rows. */
+.theme-doc-sidebar-container {
+  border-right-color: var(--docs-border);
+  background: var(--docs-chrome);
+  box-shadow: 1.25rem 0 4rem rgba(0, 0, 0, 0.12);
+}
+
+:is(.theme-doc-sidebar-container, .navbar-sidebar) .menu {
+  --ifm-menu-color: var(--docs-muted);
+  --ifm-menu-color-active: var(--docs-foreground);
+  --ifm-menu-color-background-active: var(--docs-active-bg);
+  --ifm-menu-color-background-hover: var(--docs-hover);
+  font-size: 0.8125rem;
+  scrollbar-color: var(--docs-border) transparent;
+  scrollbar-width: thin;
+}
+
+.menu__link {
+  min-height: 2.62rem;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid transparent;
+  border-radius: 0.5rem;
+  line-height: 1.4;
+  transition: color 0.2s ease, background-color 0.2s ease;
+}
+
+.menu__link:hover {
+  color: var(--docs-foreground);
+}
+
+.menu__list-item-collapsible {
+  border-radius: 0.5rem;
+}
+
+.menu__list-item-collapsible:hover {
+  background: var(--docs-hover);
+}
+
+.menu__link--active:not(.menu__link--sublist),
+.menu__link[aria-current='page'] {
+  background: var(--docs-active-bg);
+  color: var(--docs-foreground);
+  font-weight: 600;
+}
+
+.menu__list-item-collapsible--active,
+.menu__list-item-collapsible--active:hover {
+  background: var(--docs-active-bg);
+}
+
+.menu__list .menu__list {
+  margin: 0.35rem 0 0.65rem 0.85rem;
+  padding-left: 0.6rem;
+  border-left: 1px solid var(--docs-border);
+}
+
+.menu__caret {
+  border-radius: 0.5rem;
+}
+
+:is(.navbar, .menu) :is(a, button):focus-visible {
+  outline: 2px solid var(--docs-accent);
+  outline-offset: 2px;
+}
+
+/* The document and its table of contents share one panel. */
+.docs-wrapper .main-wrapper {
+  position: relative;
+  isolation: isolate;
+  background: var(--docs-workspace);
+}
+
+.docs-wrapper .main-wrapper::before {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(128, 128, 128, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(128, 128, 128, 0.025) 1px, transparent 1px);
+  background-size: 32px 32px;
+  mask-image: linear-gradient(to bottom, black, transparent 32rem);
+  pointer-events: none;
+  content: '';
+}
+
+.docs-wrapper main {
+  min-width: 0;
+  padding: 1.25rem;
+}
+
+.docs-wrapper main > .container {
+  width: 100%;
+  max-width: 90rem;
+  align-self: flex-start;
+  margin-inline: auto;
+  padding: clamp(1.25rem, 2.5vw, 2.25rem);
+  border: 1px solid var(--docs-border);
+  border-radius: 1.35rem;
+  background: var(--docs-panel);
+  box-shadow: var(--docs-shadow);
+}
+
+@media (min-width: 997px) {
+  .docs-wrapper .navbar {
+    width: calc(100% - var(--doc-sidebar-width));
+    margin-left: var(--doc-sidebar-width);
+  }
+
+  /* Keep the existing logo link in the sidebar without replacing navigation. */
+  .docs-wrapper .navbar__brand {
+    position: absolute;
+    top: 0;
+    left: calc(-1 * var(--doc-sidebar-width));
+    width: var(--doc-sidebar-width);
+    height: var(--docs-brand-height);
+    margin: 0;
+    padding: 0 1.2rem;
+    border-right: 1px solid var(--docs-border);
+    background: var(--docs-chrome);
+  }
+
+  .docs-wrapper .navbar__brand::after {
+    position: absolute;
+    right: 0.72rem;
+    bottom: 0;
+    left: 0.72rem;
+    border-bottom: 1px solid var(--docs-border);
+    content: '';
+  }
+
+  .theme-doc-sidebar-container .menu {
+    margin-top: calc(var(--docs-brand-height) - var(--ifm-navbar-height));
+    padding: 0.75rem 0.72rem 1.5rem;
+    scrollbar-gutter: auto;
+  }
+}
+
+@media (max-width: 996px) {
+  .docs-wrapper main {
+    padding: 1rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .docs-wrapper main {
+    padding: 0.75rem;
+  }
+
+  .docs-wrapper main > .container {
+    padding: 1.1rem;
+    border-radius: 1.1rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .navbar__link,
+  .menu__link {
+    transition: none;
+  }
+}
+
+@media print {
+  .docs-wrapper .main-wrapper,
+  .docs-wrapper main > .container {
+    background: none;
+    box-shadow: none;
+  }
+
+  .docs-wrapper .main-wrapper::before {
+    display: none;
+  }
+
+  .docs-wrapper main,
+  .docs-wrapper main > .container {
+    padding: 0;
+    border: 0;
+  }
 }
 
 .docs-paths {
