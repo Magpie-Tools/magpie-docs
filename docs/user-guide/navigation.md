@@ -8,6 +8,17 @@ The top-bar workspace selector determines which proxies, sources, settings,
 rotators, and alerts you see. Check it first when a list looks empty or another
 member sees different data. Your account and invitation inbox span workspaces.
 
+Open the bell in the top right to see your five most recent notifications,
+newest first. It combines pending workspace invitations, incidents in the
+selected workspace, and Magpie releases. The order uses the invitation's creation
+time, the incident's opening time, or the release's publication time.
+
+Select an item to open the invitation inbox, alert history, or that release's
+notes. Invitation and alert notifications scroll to the matching invitation or
+incident and highlight it for three seconds. **Workspace invitations** stays available at the bottom of the menu,
+even when invitations are outside the latest five. The menu refreshes when you
+open it; use its refresh button to check again while it is open.
+
 ## Choose a page by task
 
 The paths below belong to the application, for example

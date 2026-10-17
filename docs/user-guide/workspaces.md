@@ -17,8 +17,8 @@ Suppose you manage a proxy pool and want a colleague to inspect its health.
 3. Under **Invite by email**, enter the colleague's account email and choose
    **Viewer**. Send the invitation. Use **Operator** instead if they need to
    import proxies or change the pool's settings.
-4. Your colleague opens **Invitations**, reviews the offered role, and selects
-   **Accept invitation**.
+4. Your colleague opens the top-right notification bell, selects
+   **Workspace invitations**, reviews the offered role, and selects **Accept invitation**.
 5. They select **Open workspace** or switch through the top bar. Confirm they
    can see the expected pool.
 
@@ -79,7 +79,7 @@ Owners can invite admins, operators, and viewers. Admins can invite operators an
 Pending invitations appear in two places:
 
 - Workspace admins and owners see outgoing invitations on `/workspace`, including recipient, inviter, role, billing access, expiry, and notification status. They can edit permitted access or revoke the invitation.
-- Recipients see invitations from every workspace on `/invitations`. Accepting creates the membership; declining deletes the invitation.
+- Recipients open the top-right notification bell and select **Workspace invitations** to see invitations from every workspace on `/invitations`. Accepting creates the membership; declining deletes the invitation.
 
 Accepting does not switch the active workspace or change the account's default workspace. Use **Open workspace** or the top-bar selector when you want to switch.
 
