@@ -115,6 +115,20 @@ The list and detail page show the last scrape outcome:
 The timestamp is the start time of the attempt whose result is shown. Proxy
 health is separate: **No data** in a health bar does not mean that fetching failed.
 
-New sources enter the queue immediately. Browser outages, exhausted browser
-capacity, timeouts, HTTP 429 and HTTP 5xx retry after 30 seconds or the configured
-scrape interval, whichever is shorter. Other failures wait for the normal interval.
+New sources enter the queue immediately. Every completed fetch waits the
+configured scrape interval before the next attempt, whether it succeeded or
+failed. Timeouts, HTTP 429, and HTTP 5xx follow the same interval. Repeated
+failures do not multiply the interval.
+
+A valid provider `Retry-After` can postpone the next attempt further. The detail
+page shows **Next scrape** and its scheduling reason. The time is the earliest
+scheduled eligibility; busy workers can start later. An explicit administrator
+requeue bypasses the normal interval but still respects the provider's deadline.
+If an attempt is already running, the requeue joins that attempt rather than
+starting a second fetch. Long fetches and processing waits keep their claim
+active until the worker can save the next scheduled attempt.
+
+Browser capacity or startup problems leave work pending and preserve the last
+scrape outcome. Pending local work is retried after 30 seconds or the configured
+interval, whichever is shorter. A pending browser fetch does not repeat an HTTP
+fetch that has already completed for other workspaces.

@@ -100,10 +100,31 @@ result. It adds missing assignments, including for existing or paused managed
 proxies, without replacing manual tags. Source rules and tag assignments stay
 outside the proxy queue payload.
 
-New sources are eligible immediately. Browser capacity failures, outages,
-timeouts, HTTP 429, and HTTP 5xx retry after 30 seconds or the source interval,
-whichever is shorter. Other failures wait for the normal interval. A failed
-JavaScript scrape does not silently fall back to unrendered HTML.
+New sources are eligible immediately. Every completed fetch, successful or
+failed, schedules the next attempt after the configured instance scrape
+interval. Repeated failures do not increase the interval. A valid `Retry-After`
+header can delay the next attempt further and applies to both fetching modes
+for that URL, including explicit administrator requeues.
+
+Redis retains each mode's next attempt time and any provider deadline across
+replicas. Browser capacity or startup problems defer pending work after 30
+seconds or the interval, whichever is shorter, without recording an upstream
+failure. Completed HTTP work keeps its normal due time while browser work waits.
+A failed JavaScript scrape does not silently fall back to unrendered HTML.
+
+An administrator requeue joins an active attempt instead of invalidating its
+claim before a response deadline can be saved. Workers renew their five-minute
+leases throughout fetching and blocked HTML handoffs. Failed renewal cancels the
+work. Completion accepts mode progress only from the current claim, but merges
+provider deadlines by maximum even from a stale claim. That preserves a newly
+observed `Retry-After` without overwriting newer progress or recreating a removed
+source.
+
+Deploy all backend replicas together for this change. Older workers do not
+read the new scheduling state and can still perform rapid upstream retries.
+No database migration or new environment settings are required. Redis loss
+discards scheduling progress; normal queue recovery makes subscribed sources
+eligible again. Source details expose the next attempt and its reason.
 
 <details>
 <summary>Checkpoint: the final upload batch fails. Should the client assume the entire import was rolled back?</summary>

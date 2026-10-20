@@ -47,6 +47,15 @@ manual proxy import also accepts hostnames and IPv6.
 not imply its proxies are alive. A fetch-mode change clears the previous
 status, while a tag-only update preserves it.
 
+The detail response also includes `next_scrape_at` and `scrape_schedule_reason`
+when runtime scheduling state is available. The timestamp is the earliest
+eligibility, not a guaranteed start time. Completed fetches use the configured
+instance interval after both success and failure. A provider `Retry-After` can
+postpone the next attempt further. Local browser deferrals preserve the previous
+scrape outcome. Administrator requeues clear normal interval waits but retain
+provider retry deadlines. Requeueing a source that already has an active attempt
+joins that attempt without starting another fetch.
+
 ## `GET /api/getScrapingSourcesCount`
 
 Requires viewer or higher. Returns source count for the selected workspace.
