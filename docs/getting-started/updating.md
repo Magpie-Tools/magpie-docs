@@ -37,10 +37,29 @@ flowchart TD
     G -->|No| I[Repair the issue or restore matching backups and images]
 ```
 
+## Choose component versions
+
+Frontend and backend images have separate version settings in `.env`:
+
+```dotenv
+MAGPIE_BACKEND_IMAGE=kuuchen/magpie-backend
+MAGPIE_BACKEND_TAG=latest
+MAGPIE_FRONTEND_IMAGE=kuuchen/magpie-frontend
+MAGPIE_FRONTEND_TAG=latest
+```
+
+Pin immutable release tags for reproducible deployments. Select compatible
+frontend and backend releases and deploy them together. The legacy
+`MAGPIE_IMAGE_TAG` remains a shared fallback when a component tag is unset;
+an explicit component tag takes precedence. See
+[image version settings](../reference/environment-variables.md#component-images-and-versions)
+for the full reference.
+
 ## Run the update helper
 
 For an installation created by the one-command installer, run the appropriate
-command from the installation directory.
+command from the directory containing `magpie/`. For a custom installation path,
+set `MAGPIE_INSTALL_DIR` to that path before running the command.
 
 ### macOS and Linux
 
@@ -145,6 +164,48 @@ image tag back is therefore insufficient after an incompatible migration.
 
 ## Migration notes for older installations
 
+### Alerts
+
+Run `--migrate-only` with all backend instances stopped before starting an
+alerts-capable release. The migrations create workspace alert rules,
+destinations, incidents, and delivery records. They also add chat mention
+settings and internal attempt timestamps that preserve evaluation priority
+across timeouts and leadership changes. Apply the current migration even if
+the installation already has alerts.
+
+Deploy the matching frontend to expose the Alerts page. Existing workspaces
+start with no rules, and destination mentions default to off. Destination
+addresses and signing secrets are encrypted with `PROXY_ENCRYPTION_KEY`;
+retain that key with PostgreSQL backups. The [alerts guide](../user-guide/alerts.md)
+covers setup, permissions, incident timing, and delivery.
+
+### Scrape source settings
+
+The source migrations add fetching mode, last-scrape status, and automatic tag
+rules to workspace source associations. Existing sources retain browser
+rendering and start with no automatic tags. Tag rules affect future scrape
+results, including rediscovered proxies, and add missing tags without replacing
+existing assignments.
+
+Upgrade all backend workers together so they respect the selected fetching mode,
+source tags, and scheduling intervals. Deploy the matching frontend to show
+scrape status and scheduling details. The scheduling fix itself needs no new
+schema or environment settings. See the
+[scrape source guide](../user-guide/scraping-sources.md) and
+[scraping internals](../backend/import-and-scraping.md).
+
+### Statistics longevity
+
+The longevity migration adds replay-floor storage, a sortable statistics-ledger
+key, and lifetime check totals. Moving large DEFAULT-partition history can
+extend the maintenance window. Keep all backend instances stopped during
+`--migrate-only` and retain coordinated PostgreSQL and Redis backups.
+
+After migration, daily compaction preserves all-time counts, and partition
+precreation continues with `DB_AUTO_MIGRATE=false`. See
+[results and storage](../backend/results-and-storage.md) for retention,
+replay, and read-model behavior.
+
 ### Notification read status
 
 The notification update adds `notification_reads` through the normal
@@ -210,3 +271,22 @@ settings and add no database queries to individual checker runs.
 The journal retains temporary removal records so a reimported proxy does not
 reuse settings from its previous tag membership. Retention maintenance expires
 committed removal records after 24 hours; workspace deletion removes its journal.
+
+## Frontend and API compatibility
+
+Deploy compatible frontend and backend releases together when crossing these
+changes:
+
+- Rotator creation accepts any supported upstream protocol even when Default
+  checker settings disable it. Older backends reject those requests. Serving
+  traffic still requires current successful TCP evidence for the chosen
+  protocol. See [rotating proxies](../user-guide/rotating-proxies.md).
+- The frontend restores account details through `GET /api/user/profile`, saves
+  the `actions_buttons` column preference, and sends `sortField` and `sortOrder`
+  for scrape source sorting. Older backends may lack the endpoint, discard the
+  preference, or ignore the sort. See [account APIs](../api/rest-auth-and-user.md)
+  and [scrape source APIs](../api/rest-scraping-sources.md).
+- GraphQL clients must omit `scrapingSources` from `UpdateUserSettingsInput`.
+  The former no-op input now fails validation. Manage sources through REST.
+  Settings mutations also reject negative or oversized checker integers.
+  See [GraphQL settings](../api/graphql.md).
