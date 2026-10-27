@@ -54,7 +54,7 @@ Magpie accepted the route. A successful check means it passed a particular
 workspace's validation at that time. Neither guarantees that every target
 website will accept traffic through it.
 
-## Find the right guide
+## Find the right guide for you
 
 | You want to… | Read |
 | --- | --- |
