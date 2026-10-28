@@ -31,6 +31,13 @@
     "@docusaurus/types": "3.10.2",
     "typescript": "~7.0.2"
   },
+  "overrides": {
+    "@docusaurus/core": {
+      "tinypool": "2.1.2"
+    },
+    "postcss-selector-parser": "7.1.6",
+    "serialize-javascript": "7.0.5"
+  },
   "browserslist": {
     "production": [
       ">0.5%",

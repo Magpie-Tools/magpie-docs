@@ -22,6 +22,14 @@ acceptable latency and growth budgets before the run.
 | Smoke gate | The load scripts, authentication, snapshots, and log collection work. | Production capacity and durability. |
 | Release gate | Sustained behavior for the recorded dataset, hardware, and test duration. | Different workloads and longer unmeasured periods. |
 
+Retained local rehearsal fixtures sign in once when the backend becomes ready
+and keep the new token in private fixture state. A week-old fixture can contain
+an expired token even when its signing key is intact. Login and protected API
+failures must still fail validation; do not suppress a 401 or extend token
+lifetimes to make a run pass. Recovery must accept the token held before backup
+and reject the separately revoked token after restoration. Observer errors and
+failed preparation runs remain failures, with no sustained-load credit.
+
 The [backend walkthrough](../backend/index.md) explains which components these
 measurements cover. [Testing](../contributing/testing.md) lists the correctness
 checks to run before expensive load validation.
@@ -74,6 +82,13 @@ checks described in [Testing](../contributing/testing.md). For before/after
 comparisons, run the plaintext queue decode, Redis dequeue/requeue, checker HTTP,
 and client-cache churn benchmarks from the harness README.
 
+The HTML scraper uses golang.org/x/net v0.62.0 to address
+[GO-2026-6860](https://pkg.go.dev/vuln/GO-2026-6860), a reachable HTML-parser
+allocation vulnerability. Its module graph also upgrades x/crypto, x/sys,
+x/text and x/sync. Retain the dependency scan and full normal/race, vet and
+build results for this exact graph, then repeat recovery, smoke and the entire
+load gate. Results from the preceding graph cannot qualify the upgrade.
+
 Use the same host, toolchain settings, dataset, and dependency configuration.
 Record allocations, time per operation, and throughput. For checker/queue
 changes, count added cryptographic operations, JSON encodes, Redis commands,
@@ -87,13 +102,31 @@ five minutes to 30 seconds. Explicit single-mode `REDIS_URL` values still
 override the client defaults. A normal-path benchmark does not expose those
 outage latencies.
 
+Include cold dashboard reads when validating demand-based caching. Successful
+cache hits have a 30-second maximum age, and the timer keeps only components
+requested within the last two minutes warm. A restart clears this process-local
+demand. Record the first synchronous load separately, then measure the actual
+requested-component background refresh alongside checker and persisted
+projection progress for every fixture workspace. An info-only REST read must
+not warm recent-check or fastest-route components. Delayed historical-counter
+backfills can write and must be included in completion and cleanup evidence.
+Cold preparation time provides no credit toward the unchanged load durations
+or latency budgets. A private diagnostic alone does not establish a capacity
+improvement or release readiness.
+
+During startup queue loading, select each physical route once when it has an
+active owner. Shared routes must still hydrate every active workspace and their
+existing credentials. Measure enumeration alongside checker and projection work
+on the million-route profile. A stopped page comparison cannot establish
+startup readiness or replace the unchanged recovery, smoke and load gates.
+
 ## Test matrix
 
 | Suite | Script | Default duration | Primary focus | Gate criteria |
 | --- | --- | --- | --- | --- |
-| Read-heavy | `scripts/perf/k6/read-path.js` | `30m` | proxy pages, filters, dashboard, GraphQL, proxy statistics reads | per-scenario thresholds in script (p95/p99 + error rate) |
-| Write-heavy | `scripts/perf/k6/write-path.js` | `30m` | sustained `POST /api/addProxies` ingestion | per-scenario thresholds in script (p95/p99 + error rate) |
-| Mixed soak | `scripts/perf/k6/mixed-soak.js` | gate default `24h`; standalone script `2h` | long-running mixed reads + writes | per-scenario thresholds in script + growth/drop budgets below |
+| Read-heavy | `scripts/perf/k6/read-path.js` | `30m` | proxy pages, filters, dashboard, GraphQL, proxy statistics reads | content checks, request coverage, latency, HTTP failures, and dropped arrivals |
+| Write-heavy | `scripts/perf/k6/write-path.js` | `30m` | sustained `POST /api/addProxies` ingestion | content checks, request coverage, latency, HTTP failures, and dropped arrivals |
+| Mixed soak | `scripts/perf/k6/mixed-soak.js` | gate default `24h`; standalone script `2h` | long-running mixed reads + writes | per-scenario thresholds plus growth/drop budgets below |
 | Growth budget | `scripts/perf/assert-snapshot-delta.sh` | N/A | queue and DB growth across test window | queue/db deltas within configured limits |
 | Drop budget | `scripts/perf/check-drop-budget.sh` | N/A | proxy statistics queue drop protection | `dropped_total` must be less than or equal to configured budget |
 
@@ -110,6 +143,13 @@ The default release gate runs 30-minute read and write suites plus a 24-hour
 mixed soak. It rejects shorter soaks, skipped drop checks and missing/empty log
 sources. For a short functional check, run `PERF_GATE_MODE=smoke ./run-gate.sh`.
 Smoke mode does not establish production capacity.
+
+Every content check must pass. An HTTP 200 response containing GraphQL errors or
+malformed import/statistics data fails the command. Each scenario must make a
+request, and statistics scenarios require an existing proxy in the selected
+workspace. Missing proxies abort setup. They do not substitute a different
+workload. Dropped load iterations default to zero; `PERF_MAX_DROPPED_ITERATIONS`
+sets an explicit nonnegative count budget when the test plan permits drops.
 
 For full soak proof:
 
@@ -190,6 +230,28 @@ outages, import/delete churn, month boundaries, idle tunnels and a backup
 restore exercise. Use a representative 24-to-72-hour soak for release evidence. Regression tests
 and a short smoke run cannot establish that capacity or months of stability.
 
+For a reproducible local baseline, the distribution repository includes
+[`scripts/recovery`](https://github.com/Magpie-Tools/magpie/tree/master/scripts/recovery).
+It prepares one million authenticated routes shared across eight workspaces,
+runs controlled checker/scraper services, rehearses coordinated recovery into
+fresh volumes, and starts the corrected gate with telemetry. Its internal Docker
+network prevents external requests. This Linux workflow needs a locally built
+backend image, k6, Go, Python, and sufficient RAM and disk for the recorded profile.
+Review its README before running it.
+
+The baseline cycles imports through a finite existing pool using
+`PERF_PROXY_FIXTURE_FILE`. That measures repeated ingestion. Record new-route
+imports and deletion separately, and report the measured protocols, proxy
+latency, resource limits, and maintenance settings with the result. A pending
+24-hour run is incomplete evidence.
+
+The local baseline retains an unknown Redis consumer lag as `null`. When stream
+deletions make lag unavailable, it uses stream length plus pending IDs as an
+upper bound on outstanding work. This can count an entry twice; it cannot omit
+an unread entry or a pending ID whose payload was deleted. Existing backlog
+limits and persistence-credit deductions apply to that larger bound. Missing
+streams or groups and malformed diagnostics still fail validation.
+
 ## Regression coverage and upgrade constraints
 
 Statistics replay protection and persisted reputation refresh require the
@@ -261,8 +323,11 @@ more source associations than fit in one refresh batch.
 Statistics stream workers leave unacknowledged entries pending for
 recovery. The ledger prevents committed entries from counting twice. Pending
 entries from another consumer become recoverable after at least one minute idle.
-The volatile in-memory fallback makes one final persistence attempt bounded by
-the 30-second database timeout; a failed final attempt has no durable recovery.
+The volatile in-memory fallback retries its unfinished final buffer, with each
+flush bounded by a shared 30-second preparation/write deadline. It remains
+active until empty, so the overall background shutdown deadline reports an
+error if draining cannot finish. A forced exit has no durable recovery for
+results that exist only in memory.
 
 ### Asynchronous read models
 
@@ -277,6 +342,72 @@ for up to 100 source/workspace pairs by default. Large backlogs require more
 time or an adjusted batch size. Proxy-list health keeps its own refresh loop.
 Source notification work no longer recounts the pool after every route update;
 the coalesced refresh still aggregates the affected source pool.
+
+Proxy-list refresh batches count workspace/route pairs. Shared owners of one
+physical route are grouped within that limit so the statement can reuse route
+metadata. An upsert still checks each owner's current evidence and lifecycle
+state, and orders writes by workspace and route. Grouping adds no capacity
+guarantee: measure current projection lag and write/index costs under the full
+resource profile. A failed clean drain still requires stopped-writer repair.
+
+Unchanged proxy-list rows are filtered before the upsert acquires conflict
+locks. Changed and missing rows retain the existing null-safe conflict check.
+Validate every projected content field, unchanged timestamps and concurrent
+row locks. The filter adds a projection lookup inside the existing statement;
+measure its read cost alongside avoided locks. A stopped comparison that ran
+the original first cannot attribute later latency or WAL reductions to this
+filter, and cannot qualify readiness or load capacity.
+
+Pending physical route IDs drain in sorted rounds to retain index locality.
+An unseen queued route reads the latest committed evidence when processed;
+invalidations for in-flight routes remain queued for another round. Sorting
+adds memory and CPU work, so include a large pending set in measurements and
+verify that new invalidations and failed prefixes survive until drained.
+
+Include repeated imports of existing management in the workload. Those imports
+preserve lifecycle and usage counters without recounting the whole inventory;
+actual new ownership still refreshes authoritative capacity and peak usage.
+Measure import transaction/lock time alongside statistics and projection lag.
+Check mixed new/existing rows, finite quotas, encrypted credentials and deletion
+between the ownership conflict check and credential update. A no-addition import
+must neither resurrect deleted ownership nor write unchanged billing usage.
+
+Periodic alive-count snapshots join a scoped active-ownership input to current
+evidence. Validate both sparse and dense evidence, one and multiple workspaces,
+protocol overrides, legacy generations and inactive ownership. PostgreSQL must
+avoid an ownership lookup for every alive result in the dense case. Record
+shared reads and temporary-file I/O: the scoped join can trade more temporary
+I/O for fewer repeated index probes. Stopped-data equivalence and query timings
+do not establish sustained capacity or replace recovery, smoke or load gates.
+
+Cold dashboard country counts, reputation counts and top-proxy selection share
+one materialized active-workspace projection. Include the first dashboard
+request in validation and measure its complete latency, including joined legacy
+daily-check backfill. Record base-table reads and temporary-file I/O together:
+sharing the input reduces repeated scans but can increase temporary storage.
+Check tenant/lifecycle scope, null scores, tie order, cancellation and retained
+history. Read-only probes that prevent backfill writes cannot qualify readiness;
+query equivalence or lower read counts cannot replace the full load gate.
+
+Dashboard check counts combine retained counters and raw day-boundary results
+before one current-ownership join. Verify exact UTC cutoffs, compacted history,
+successful and unsuccessful attempts, legacy NULL results and current ownership
+across active, paused and archived management. Record command counts, parallel
+plans, shared reads and temporary I/O together. The combined count read uses
+one SQL statement; its result does not replace complete cold-request latency,
+joined backfill, clean recovery or sustained load evidence.
+
+After a recognized projection child deadline, the updater retains a smaller
+statement width within that owner batch. Two consecutive full-width commits
+using at most a quarter of the child timeout allow growth toward the configured
+ceiling. A successful full-width commit taking more than half of the child
+timeout also halves the next width, retaining its committed prefix without a
+retry interval. Short tails do not trigger this change; new batches still start
+at ordinary width. Record failed attempts, successful widths, round trips and write/index
+costs together. Verify that timing-based growth preserves contiguous progress,
+source-only retries, concurrent invalidations and clean drain behavior. The
+ordinary pair ceiling, invocation count, timer and timeout remain unchanged;
+smaller statements and unit delay fixtures do not establish sustained capacity.
 
 ### Long-running storage growth
 

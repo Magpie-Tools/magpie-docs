@@ -19,6 +19,59 @@ Shutdown stops producers first, then consumers, then read-model refreshes.
 Coordination differs by routine: queue leases, stream consumer groups, Redis
 leadership, and PostgreSQL delivery claims solve different problems.
 
+Statistics consumers flush at 5,000 physical results or every 15 seconds. They
+bound transactions by 5,000 potential latest-evidence rows, keeping a single
+result atomic even if it exceeds that limit. All transactions and preparation
+in a flush share a 30-second deadline. Committed prefixes survive later
+failures; only handled original stream IDs can be acknowledged. Memory workers
+retry unfinished final buffers until empty or the overall shutdown fails.
+
+Proxy-list read models coalesce dirty route IDs, discover their owners, and
+refresh at most 5,000 workspace/route rows per prefix by default. Each prefix
+has a 30-second deadline. Metadata reads use only its candidate routes. A
+normal pass handles at most four projection statements on its five-second
+timer. It retains unfinished ownership pairs for retry without repeating
+committed prefixes. When a projection prefix reaches its child deadline while
+its parent refresh context remains active, the next invocation halves its width within that
+failed interval. Successful smaller statements commit independently; completing
+the interval restores ordinary width. Discovery, source-lookup, parent
+cancellation, and permanent-error paths do not trigger splitting. Smaller
+retries can add database round trips and still need representative throughput
+validation. Source invalidations follow all completed owner prefixes
+for the original route batch; a failed source lookup retries separately.
+Final draining retries proxy and source failures with a 250 ms backoff until
+both dirty queues are empty. Source-counter batches have their own 30-second
+deadline. Unfinished work makes the overall shutdown deadline report an error.
+The environment reference lists the `READ_MODEL_REFRESH_*` controls.
+
+Read-model failure logs distinguish numeric stages: `1` is owner discovery,
+`2` is a chosen projection prefix, and `3` is its final source lookup. `cursor`,
+`attempted_pairs`, `owner_pairs`, `retry_end`, and `retry_pair_limit` describe
+in-memory progress without logging route arrays or credentials. A prefix stage
+includes its existing table check; it does not prove the upsert reached the
+server. Timing fields report milliseconds for owner, projection and source
+work. These fields support diagnosis and do not certify capacity.
+
+Dashboard refreshes pass job cancellation into all database reads, including
+delayed daily-counter backfills. Every 30 seconds, the normal timer snapshots
+components requested within the last two minutes and refreshes them serially,
+rechecking demand before each component. It does not scan every workspace or
+renew demand itself. Info, recent checks and fastest routes are independent
+keys, including custom list limits. Demand and cached entries are process-local
+and expire after idle; restarting clears them.
+
+Each successful entry is eligible for cache hits for at most 30 seconds. A
+cold or expired request loads synchronously or joins the same component's
+refresh. Each loader inherits its caller context and a 30-second child bound.
+Canceled or failed refreshes retain the previous stored snapshot without
+granting an expired hit. Delayed daily-counter backfills follow the refresh's
+cancellation and completion lifecycle. Historical counter backfill for unread
+workspaces waits until their dashboard counts are requested; this timer is
+not an unattended all-workspace historical-backfill job. The explicit force
+prewarm still visits all workspaces for strict development fixture startup.
+Judge and fastest-route queries retain their existing workspace scope and
+query fan-out; fastest-route metadata loads after selecting the winners.
+
 ## Core routines
 
 - judge refresh routine
@@ -53,6 +106,15 @@ are disabled, moves affected DEFAULT rows, and compacts older daily counts into
 lifetime totals. Stream maintenance retires acknowledged identities behind a
 durable replay floor. Orphan cleanup drains counter tables hourly with a 45-second
 budget and retries failures or interruptions after one minute by default.
+
+Obsolete latest-evidence cleanup evaluates at most
+`PROXY_STATISTICS_RETENTION_BATCH_SIZE` candidate pointers per page in primary-key order.
+It runs once per coordinated history-worker round. An unfinished scan resumes
+on the next scheduled pass, within the existing batch and runtime limits. Each
+scan fixes its upper key before starting, then returns to earlier keys in the
+next scan so new evidence cannot indefinitely postpone older invalidations.
+Dirty workspace namespaces and current legacy, default, and tag-override
+evidence remain protected; history retention keeps their referenced checks.
 
 Monitor `magpie_leader_job_active`, `magpie_maintenance_last_success_timestamp_seconds`,
 `magpie_maintenance_failures_total`, and `magpie_statistics_replay_floor_timestamp_seconds`.

@@ -328,6 +328,10 @@ instances. These settings apply per instance:
 | `PROXY_REPUTATION_REFRESH_INTERVAL_SECONDS` | `1` | Idle or error retry delay. Workers continue immediately while work remains. |
 | `SCRAPE_SOURCE_STATS_REFRESH_INTERVAL_SECONDS` | `30` | Interval for coalesced source health counts. Proxy-list projection keeps its own refresh interval. |
 | `SCRAPE_SOURCE_STATS_REFRESH_BATCH_SIZE` | `100` | Source/workspace pairs refreshed per interval, clamped to 1 through 1000. |
+| `READ_MODEL_REFRESH_INTERVAL_SECONDS` | `5` | Interval between proxy-list projection passes. |
+| `READ_MODEL_REFRESH_BATCH_SIZE` | `5000` | Ordinary workspace/route rows per projection prefix, capped at 5000. A projection child deadline can halve only the failed interval's later retry statements; successful intervals return to this width. Owner discovery takes up to this many dirty physical routes; expanded ownership pairs are retained between prefixes. Also the explicit repair's proxy page limit. |
+| `READ_MODEL_REFRESH_MAX_BATCHES` | `4` | Maximum projection statements per normal pass, including reduced retries. Shutdown uses its existing overall drain deadline. |
+| `READ_MODEL_REFRESH_TIMEOUT_SECONDS` | `30` | Per-prefix deadline for background proxy-list refresh and its final source invalidation lookup. Unfinished pairs retry without repeating committed prefixes; this does not extend the overall shutdown deadline. |
 
 Monitor `magpie_proxy_reputation_refresh_pending` and
 `magpie_proxy_reputation_refresh_oldest_age_seconds` to check whether refresh

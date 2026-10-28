@@ -43,6 +43,13 @@ Redis Streams are enabled by default. Producers append to
 The normal flush threshold is 5,000 results or a 15-second timer per worker.
 Recovered partial pending batches also flush before waiting for new traffic.
 
+A flush can contain several transactions. Each transaction normally covers at
+most 5,000 potential latest-evidence rows, counting valid workspace evidence
+and at least one row per physical result. Eight workspaces sharing each result
+therefore produce transactions of at most 625 results. A single result with
+more evidence than the limit stays together in one transaction. Preparation
+and all transactions in one flush share the same 30-second deadline.
+
 When Redis is disabled, stream initialization is incomplete, or stream
 admission fails, results can enter a memory fallback queue. Initialization
 retries after an outage. Memory fallback is volatile and has no replay identity.
@@ -76,6 +83,13 @@ changing admission settings.
 - Latest evidence keyed by workspace, configuration, route, and protocol.
 - Durable requests to refresh affected reputation data.
 
+Latest-evidence writes take conflicting rows in a consistent order. The
+transaction writes latest evidence and reputation requests before updating
+shared usage rows, so imports do not wait on usage while the larger evidence
+set is written. Any legacy overall-status aggregation follows those writes,
+preserving its serialization through shared reputation or usage rows. Usage
+still commits atomically with the result and replay identity.
+
 A delayed older event cannot replace newer latest evidence. Obsolete settings
 can contribute historical evidence without defining current health. Before
 inserting, consumers exclude routes that have been deleted. Malformed stream
@@ -86,11 +100,17 @@ flush therefore does not mean every originally submitted item became history.
 
 | Failure point | Recovery |
 | --- | --- |
-| Database write fails before commit | Keep the batch and leave stream entries pending. Retry persistence. |
+| A transaction fails before commit | Keep its original results and the remaining suffix for retry. Earlier committed prefixes remain handled; their stream IDs can be acknowledged. |
 | Commit succeeds, then acknowledgement fails | Retry acknowledgement; another worker may reclaim idle pending entries. Event identities prevent duplicate history and counters. |
 | Consumer crashes with a pending stream batch | Another consumer can reclaim surviving entries and retry. |
 | Redis loses an entry before PostgreSQL commit | Queue reconstruction cannot recreate that result. Redis persistence and overload policy matter. |
-| Process exits with memory-only results | Workers make a final bounded drain/insert attempt. A failed final attempt loses those results. |
+| Shutdown has memory-only results | Workers retry the remaining buffer in bounded flushes. Unfinished draining makes the background shutdown deadline fail; a forced exit can still lose those volatile results. |
+
+Memory consumers remove each committed original prefix before retrying a
+failed suffix. Stream consumers match acknowledgements to original event IDs,
+including discarded malformed or deleted-route entries. Filtering or replay
+deduplication cannot shift that correspondence and acknowledge an uncommitted
+result.
 
 Replay protection is part of the same transaction as history and counters.
 Stream maintenance retires old event identities behind a durable replay floor
@@ -115,9 +135,43 @@ They are derived views, rather than another copy of an individual check's
 durability guarantee. Health reads also verify the current checker generation,
 so a stale settings projection cannot make old evidence current.
 
+Proxy-list projection batches read evidence for their dirty workspace/route
+pairs and reuse that bounded evidence for current health and latest-check
+fields. Shared ownership does not require scanning every workspace's inventory.
+Concurrent projection writers lock rows in workspace/route order. Background
+batches have a 30-second default deadline and retain failed or timed-out work.
+A projection-prefix child deadline can reduce that failed interval's next
+statement to half its previous width while its parent refresh context remains active. Each
+successful subprefix advances the contiguous committed cursor; the ordinary
+width returns after that interval finishes. There is no retry inside the failed
+invocation. This can increase exceptional database round trips. Parent
+cancellation, permanent errors, and unresolved one-pair work cannot be skipped.
+Owner discovery shares the first prefix's child deadline. Discovery and the
+final source lookup do not create or split a projection retry interval. A normal
+pass still handles at most four projection statements.
+`READ_MODEL_REFRESH_TIMEOUT_SECONDS` changes that batch deadline; it does not
+extend the overall shutdown allowance or the time allowed for a proxy check.
+During final shutdown, proxy and source batches retry with a 250 ms backoff
+until both dirty queues are empty. Source-counter batches keep their separate
+30-second deadline. If draining cannot finish within
+`BACKGROUND_SHUTDOWN_TIMEOUT_SECONDS`, shutdown reports an error.
+
+Startup reconciles projection indexes created under older names. It removes
+known redundant copies only when an equivalent valid index remains, and keeps
+indexes with different definitions or clustering settings. Large installations
+may spend additional startup time building page/filter indexes. Wait for
+readiness before sending traffic, and include this migration work in upgrade
+and recovery timing.
+
 Retention keeps storage bounded. Detailed history and response bodies have
 separate retention settings. Monthly partitions are prepared ahead of time,
-and older daily counters compact into lifetime totals. The
+and older daily counters compact into lifetime totals. Obsolete latest-evidence
+cleanup uses bounded key-ordered pages and resumes unfinished scans on later
+maintenance passes. It preserves dirty workspace namespaces and matching
+legacy, default, and tag-override evidence, so referenced current checks remain
+pinned in history. Successful checks skip already-zero failure streak updates,
+and metadata enrichment skips rows whose country and type are unchanged.
+The
 [storage reference](../reference/data-storage.md) describes table responsibilities;
 [backup and recovery](../operations/backup-and-recovery.md) covers restoration.
 

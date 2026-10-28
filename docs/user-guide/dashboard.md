@@ -37,6 +37,16 @@ and reputation refresh afterward, so brief differences are possible. For a
 growing delay, use [observe and troubleshoot](../learn/observe-and-troubleshoot.md)
 and [results and storage](../backend/results-and-storage.md).
 
+Successful dashboard cache hits are at most 30 seconds old. The first read
+after startup or an idle period, and any expired read, loads current data
+before responding and can take longer. Concurrent readers share that refresh.
+The background timer keeps only recently requested components warm for two
+minutes after their last read. The info summary, recent checks and fastest
+routes are tracked separately. Refreshing one does not warm the others.
+Opening a browser tab does not by itself keep these entries warm; the page
+loads on entry and manual refresh. Historical daily-counter backfill for an
+unread workspace waits until its dashboard counts are requested.
+
 ## Data sources
 
 - REST: `GET /api/getDashboardInfo`

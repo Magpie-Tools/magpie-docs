@@ -85,8 +85,15 @@ or archive check fails.
 ```bash
 (
   set -e
+  verify_stopped() {
+    container_id="$(docker compose ps --all -q "$1")"
+    test -n "$container_id"
+    test "$(docker inspect --format '{{.State.Running}}:{{.State.ExitCode}}:{{.State.OOMKilled}}:{{.State.Error}}' "$container_id")" = 'false:0:false:'
+  }
   docker compose stop backend
+  verify_stopped backend
   docker compose stop redis
+  verify_stopped redis
 
   docker compose exec -T postgres sh -c \
     'pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Fc' \
@@ -112,6 +119,9 @@ PostgreSQL stays running for the logical dump. Its
 [custom archive format](https://www.postgresql.org/docs/17/app-pgdump.html)
 works with `pg_restore`. Application writers must remain stopped so the
 PostgreSQL state matches the frozen Redis state.
+`docker compose stop` completing does not prove that the application drained
+successfully. The exit-state checks above reject a nonzero exit, a forced stop,
+or an out-of-memory kill before any backup is captured.
 
 The Redis helper runs `tar` against the stopped volume without starting Redis.
 Archive the entire `/data` directory. Redis 7 uses multipart append-only files;
@@ -147,10 +157,12 @@ Start only PostgreSQL:
 ```bash
 docker compose up -d postgres
 docker compose exec -T postgres sh -c \
-  'pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB"'
+  'pg_isready -h 127.0.0.1 -U "$POSTGRES_USER" -d "$POSTGRES_DB"'
 ```
 
-Wait until the readiness command succeeds, then restore. The destination
+Wait until the TCP readiness command succeeds, then restore. PostgreSQL's
+temporary initialization server can answer over its Unix socket before the
+final server is ready. The destination
 database must be fresh. This is a single-database restore; installations with
 custom PostgreSQL roles, tablespaces, or extension requirements need those
 prerequisites restored by their database administrator.
@@ -177,6 +189,36 @@ source ACLs, which suits the bundled single-role stack. See the
 [`pg_restore` options](https://www.postgresql.org/docs/17/app-pgrestore.html).
 A failed restore may leave partial data. Keep the backend stopped, inspect the
 error, and prepare a fresh destination before retrying.
+
+## Repair derived state after an interrupted shutdown
+
+A failed shutdown can leave proxy filters and source counters behind the
+durable results in PostgreSQL. Dirty notifications are held in memory; ordinary
+startup does not rescan every nonempty projection. Keep all backend replicas
+and external writers stopped, preserve the failed-state evidence, and use the
+matching backend image with the existing schema and `PROXY_ENCRYPTION_KEY`:
+
+```bash
+docker compose run --rm --no-deps backend --rebuild-read-models
+```
+
+Retain the installation's usual Compose file selection, including its production
+overlay. By default, this command rebuilds proxy filters in pages of up to 5,000
+ownership pairs; source counters use pages of up to 100 pairs. It does not start the API,
+Redis clients or background jobs, migrate the schema, or seed defaults. It
+requires the existing encryption key. SIGINT, SIGTERM and database failures
+return an error; already completed pages remain applied, and the command can be
+rerun from the beginning.
+
+The repair also removes derived filter and source-counter rows whose ownership
+no longer exists. Candidate pages are bounded before checking ownership, so
+cleanup does not rescan the full derived tables for every page. Authoritative
+routes, ownership, credentials and result history are preserved.
+
+Start the backend only after the command exits successfully, verify current
+checks and filters, then repeat the coordinated shutdown and backup. Repairing
+derived state does not establish that a previous failed backup was clean or
+recover volatile results that never reached PostgreSQL.
 
 Do not run a new version's migration before restoring an older schema. Recover
 at matching versions first; perform a separate, backed-up
@@ -205,6 +247,18 @@ successful restore rehearsal. Measure how much data could be lost between
 backups, your recovery point objective, and how long verified recovery takes,
 your recovery time objective. Use those measurements to choose backup frequency
 and retention.
+
+The distribution repository's
+[`isolated rehearsal`](https://github.com/Magpie-Tools/magpie/tree/master/scripts/recovery)
+automates this procedure for disposable Linux Docker services. It stops writers,
+captures the coordinated bundle, removes its original volumes, restores fresh
+volumes, and verifies stored state plus application behavior. Its default dataset
+has one million imported authenticated routes shared across eight workspaces.
+The workflow also checks persistent JWT material, revoked sessions, decrypted
+credentials, and an authenticated rotating listener against a controlled judge.
+It retains a result file, timings, and raw command logs. This is a local capacity
+and recovery baseline; rehearse the production storage and configuration profile
+before claiming the same recovery time for a live installation.
 
 ## If the original encryption key is missing
 

@@ -33,6 +33,9 @@ npm run build
 
 The generated static output is written to `build/`.
 
+[Dependency security review](DEPENDENCY_SECURITY.md) records the build-tool
+overrides and the applicability of remaining audit findings.
+
 The build checks internal links and anchors strictly. Run `npm run serve` to
 inspect the result. Mermaid diagrams render in the browser and include
 accessible descriptions, horizontal scrolling, and an expandable view. Check
