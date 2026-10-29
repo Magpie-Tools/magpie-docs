@@ -33,6 +33,27 @@ proxies but marks them paused. Existing routes are never displaced or deleted.
 
 IPv6 literals must use brackets when a port is present. Proxy scraping remains IPv4-only and does not import hostnames. A provider hostname remains one route when its DNS answers change. Magpie checks it through normal DNS resolution, but IP blacklists, GeoLite, and AbuseIPDB apply only to routes entered as literal IP addresses.
 
+## Estimated proxy type
+
+With GeoLite enabled, Magpie estimates the network type of a route's literal IP
+address. Known hosting ASNs take precedence over organization-name heuristics
+and reverse DNS. A hosting classification stays **Datacenter** even when its
+reverse hostname contains residential-looking words.
+
+For other networks, specific access markers such as `adsl`, `vdsl`, `cable`, or
+`ftth` in reverse hostnames can suggest **Residential**. Generic words such as
+`ip`, `static`, `dynamic`, `pool`, and `customer` do not establish residential
+access. Provider domain names are excluded from these matches, and conflicting
+mobile or server markers leave the ASN estimate unchanged. An **ISP** label
+does not establish that the address belongs to a household. Inconclusive
+addresses remain **N/A**.
+
+These are estimates about the route's IP, not proof of its physical connection
+or its exit IP. Import enrichment and scheduled refreshes use the same rules.
+Reverse DNS uses the existing cache, which retains successful and empty results
+for up to 12 hours. Known hosting networks skip the lookup. Existing labels are
+recalculated during the next background geo refresh.
+
 ## Browse and filter
 
 Use:
