@@ -78,6 +78,7 @@ force a new proxy check.
 | `/plugins` | Enrichment integrations. |
 | `/plugins/geolite` | GeoLite configuration. |
 | `/plugins/abuseipdb` | AbuseIPDB configuration. |
+| `/plugins/ipgeolocation` | IPGeolocation.io credentials, cache policy, and credit budget. |
 
 These pages require the global account `admin` role. A workspace owner does
 not automatically become an instance administrator. Conversely, an instance

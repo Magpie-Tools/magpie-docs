@@ -26,12 +26,18 @@ Default values come from `internal/config/default_settings.json` in
 - `scraper`
 - `proxy_limits`
 - `runtime`
-- `plugins`, including `geolite` and `abuseipdb`
+- `plugins`, including `geolite`, `abuseipdb`, and `ipgeolocation`
 - `blacklist_timer`
 - `blacklist_sources`
 - `website_blacklist`
 
 ## Example
+
+`plugins.ipgeolocation` has `enabled` (default `false`), `api_key`,
+`include_security` (default `false`), `daily_credit_limit` (default `300`,
+range 1–100000), and `cache_hours` (default `168`, range 1–720). Security
+lookups require a budget of at least 3 credits. See
+[IPGeolocation.io](../user-guide/ipgeolocation.md) for billing and freshness.
 
 ```json
 {
