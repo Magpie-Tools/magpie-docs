@@ -35,6 +35,10 @@ IPv6 literals must use brackets when a port is present. Proxy scraping remains I
 
 ## Estimated proxy type
 
+The optional [IPGeolocation.io plugin](ipgeolocation.md) can replace local
+country and network-type estimates with cached provider data. Proxy details
+show its lookup time and available network and security fields.
+
 With GeoLite enabled, Magpie estimates the network type of a route's literal IP
 address. Known hosting ASNs take precedence over organization-name heuristics
 and reverse DNS. A hosting classification stays **Datacenter** even when its

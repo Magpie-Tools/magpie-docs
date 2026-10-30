@@ -57,7 +57,9 @@ subscriptions. Add allowed resources again when appropriate.
 
 ## Configure enrichment
 
-Use `/plugins/geolite` and `/plugins/abuseipdb` for their integration settings.
+Use `/plugins/geolite`, `/plugins/abuseipdb`, and `/plugins/ipgeolocation` for
+their integration settings. See [IPGeolocation.io](ipgeolocation.md) for its
+shared IP cache, credit budget, and optional security intelligence.
 These add location or reputation evidence when configured and available.
 They do not create a working proxy pool or replace checker validation.
 A hostname route can remain without IP enrichment even when its checks succeed.

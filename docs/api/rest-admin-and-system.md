@@ -38,6 +38,14 @@ Side effects when config changes:
 
 Requires admin role. Returns full current global config.
 
+## `GET /api/plugins/ipgeolocation/status` (admin)
+
+Returns `used_credits`, `daily_credit_limit`, `reset_at`, `next_request_at`,
+`last_checked_at`, and `last_error`. Usage is Magpie's local credit budget,
+not the provider account balance. This endpoint reads local state and does not
+perform a provider lookup. Configure the plugin through the full global settings
+object's `plugins.ipgeolocation` field. See [IPGeolocation.io](../user-guide/ipgeolocation.md).
+
 ## `POST /api/global/proxies/requeue` (admin)
 
 Requires admin role. Redistributes waiting proxy checks across the current

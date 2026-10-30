@@ -40,6 +40,7 @@ const sidebars: SidebarsConfig = {
         'user-guide/checker-and-judges',
         'user-guide/account',
         'user-guide/admin',
+        'user-guide/ipgeolocation',
       ],
     },
     {
