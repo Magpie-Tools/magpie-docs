@@ -5,7 +5,11 @@ import type * as Preset from '@docusaurus/preset-classic';
 const config: Config = {
   title: 'Magpie Docs',
   tagline: 'Documentation for Magpie, the self-hosted proxy manager',
-  favicon: 'img/magpie-light-green.ico',
+  favicon: 'img/favicon.ico',
+  headTags: [
+    {tagName: 'link', attributes: {rel: 'icon', type: 'image/svg+xml', href: '/docs/img/favicon.svg'}},
+    {tagName: 'link', attributes: {rel: 'apple-touch-icon', href: '/docs/img/apple-touch-icon.png'}},
+  ],
 
   future: {
     v4: true,
@@ -51,7 +55,7 @@ const config: Config = {
   ],
 
   themeConfig: {
-    image: 'img/docusaurus-social-card.jpg',
+    image: 'img/magpie-social-card.jpg',
     colorMode: {
       respectPrefersColorScheme: true,
     },
@@ -65,7 +69,8 @@ const config: Config = {
       title: 'Magpie Docs',
       logo: {
         alt: 'Magpie Docs Logo',
-        src: 'img/magpie-light-green.svg',
+        src: 'img/magpie-logo.svg',
+        srcDark: 'img/magpie-logo-dark.svg',
       },
       items: [
         {
