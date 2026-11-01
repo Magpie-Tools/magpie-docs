@@ -68,6 +68,7 @@
   color: var(--docs-foreground);
 }
 
+/* Same bare mark as the dashboard sidebar. */
 .navbar__logo {
   display: grid;
   width: 2.55rem;
@@ -75,14 +76,11 @@
   margin: 0;
   flex: 0 0 auto;
   place-items: center;
-  border-radius: 0.82rem;
-  background: linear-gradient(0deg, rgba(var(--docs-accent-rgb), 0.16), transparent 45%);
-  box-shadow: 0 0.7rem 1.8rem rgba(0, 0, 0, 0.12), inset 0 1px rgba(255, 255, 255, 0.07);
 }
 
 .navbar__logo img {
-  width: 1.72rem;
-  height: 1.72rem;
+  width: 2.55rem;
+  height: 2.55rem;
 }
 
 .navbar__title {
