@@ -64,13 +64,13 @@ set `MAGPIE_INSTALL_DIR` to that path before running the command.
 ### macOS and Linux
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Magpie-Tools/magpie/refs/heads/master/scripts/update.sh | bash
+curl -fsSL https://magpie.tools/update.sh | bash
 ```
 
 ### Windows PowerShell
 
 ```powershell
-iwr -useb https://raw.githubusercontent.com/Magpie-Tools/magpie/refs/heads/master/scripts/update.ps1 | iex
+irm https://magpie.tools/update.ps1 | iex
 ```
 
 For a Git checkout of the distribution repository, use its wrapper:

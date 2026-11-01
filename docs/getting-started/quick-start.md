@@ -34,14 +34,19 @@ stable across updates. It protects saved credentials and route identity.
 ### macOS/Linux
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Magpie-Tools/magpie/refs/heads/master/scripts/install.sh | bash
+curl -fsSL https://magpie.tools/install.sh | bash
 ```
 
 ### Windows (PowerShell)
 
 ```powershell
-iwr -useb https://raw.githubusercontent.com/Magpie-Tools/magpie/refs/heads/master/scripts/install.ps1 | iex
+irm https://magpie.tools/install.ps1 | iex
 ```
+
+Both scripts are published from
+[`scripts/`](https://github.com/Magpie-Tools/magpie/tree/master/scripts) in
+the distribution repository whenever they change, so you can read them there
+before running them.
 
 <details>
 <summary>Alternative: install manually from a clone</summary>
