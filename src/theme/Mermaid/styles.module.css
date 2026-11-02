@@ -16,10 +16,16 @@
   outline-offset: -3px;
 }
 
+/*
+ * Mermaid caps each SVG at its natural width. --diagram-width (set by the
+ * component) lets the minimum apply only to diagrams that are wide anyway,
+ * so narrow flowcharts are never scaled up into very tall images.
+ */
 .viewport :global(svg) {
   display: block;
   width: 100%;
-  min-width: 32rem;
+  height: auto;
+  min-width: min(var(--diagram-width, 0px), 32rem);
   margin: 0 auto;
 }
 
@@ -69,5 +75,6 @@
 }
 
 .expanded :global(svg) {
-  min-width: 40rem;
+  max-width: calc(var(--diagram-width, 40rem) * 1.5) !important;
+  min-width: min(calc(var(--diagram-width, 0px) * 1.5), 40rem);
 }
