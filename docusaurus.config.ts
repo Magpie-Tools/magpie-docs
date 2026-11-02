@@ -60,9 +60,34 @@ const config: Config = {
       respectPrefersColorScheme: true,
     },
     mermaid: {
+      // Docs diagrams use the palette in src/theme/Mermaid/diagramTheme.ts;
+      // these built-in themes only apply to the stock renderer.
       theme: {light: 'neutral', dark: 'dark'},
       options: {
         fontFamily: 'system-ui, sans-serif',
+        // Wider labels and tighter spacing keep long top-down flowcharts
+        // readable without scrolling past one or two steps at a time.
+        flowchart: {
+          wrappingWidth: 260,
+          nodeSpacing: 30,
+          rankSpacing: 30,
+        },
+        // Narrower lanes and wrapped messages keep sequence diagrams close to
+        // the column width, so they are not scaled down until the text is tiny.
+        sequence: {
+          diagramMarginX: 8,
+          diagramMarginY: 8,
+          actorMargin: 24,
+          width: 120,
+          height: 44,
+          boxMargin: 8,
+          messageMargin: 32,
+          mirrorActors: false,
+          wrap: true,
+          messageFontSize: 14,
+          noteFontSize: 14,
+          actorFontSize: 14,
+        },
       },
     },
     navbar: {
