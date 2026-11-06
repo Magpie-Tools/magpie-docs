@@ -70,7 +70,38 @@ Lists every workspace membership for the authenticated account. The default work
         "included_operators": 0,
         "statistics_retention_days": 0,
         "minimum_check_interval_seconds": 0,
+        "monthly_checks": 0,
+        "monthly_scrapes": 0,
+        "unlimited_checks": false,
+        "unlimited_scrapes": false,
         "cancel_at_period_end": false
+      },
+      "allowances": {
+        "unlimited_checks": false,
+        "unlimited_scrapes": false,
+        "needs_check_interval": false,
+        "needs_scrape_interval": false,
+        "monthly_checks": 1500000,
+        "used_checks": 412880,
+        "checks_per_cycle": 1842,
+        "check_interval_seconds": 5530,
+        "checks_exhausted": false,
+        "monthly_scrapes": 3000,
+        "used_scrapes": 310,
+        "scrapes_per_cycle": 6,
+        "scrape_interval_seconds": 6030,
+        "scrapes_exhausted": false,
+        "requested_check_interval_seconds": 0,
+        "requested_scrape_interval_seconds": 0,
+        "minimum_check_interval_seconds": 60,
+        "minimum_scrape_interval_seconds": 900,
+        "projected_monthly_checks": 1500000,
+        "projected_monthly_scrapes": 3000,
+        "inherits_checks": true,
+        "inherits_scrapes": true,
+        "period_start": "2026-11-01T00:00:00Z",
+        "period_end": "2026-12-01T00:00:00Z",
+        "computed_at": "2026-11-12T08:31:00Z"
       },
       "created_at": "2026-08-24T10:00:00Z"
     }
@@ -79,6 +110,49 @@ Lists every workspace membership for the authenticated account. The default work
 ```
 
 `activation_limit` is `null` for unlimited workspaces. Billing-provider customer and subscription identifiers are never returned.
+
+`subscription.monthly_checks` and `subscription.monthly_scrapes` hold the
+workspace's own allowances. `0` means the workspace uses the instance default.
+`subscription.unlimited_checks` and `unlimited_scrapes` remove the workspace's
+limit. `allowances.unlimited_*` is the effective value, including an unlimited
+instance default. When it is `true`, `monthly_*` is not enforced, no run-out
+is reported, and `needs_*_interval` is `true` until the workspace chooses a
+fixed interval. Until then it runs hourly.
+`allowances` reports the effective allowance, this month's metered use and the
+cadence derived from them. These values come from the allowance snapshot each
+instance refreshes once a minute, so they can lag slightly behind actual use.
+`computed_at` is absent until the first snapshot includes the workspace. The
+interval fields are `0` when an allowance is exhausted.
+`requested_*_interval_seconds` is the workspace's fixed interval, or `0` for
+automatic. `projected_monthly_*` estimates a full month's use at the current
+cadence. `checks_run_out_at` and `scrapes_run_out_at` appear only when a fixed
+interval uses up the remaining allowance before the month ends.
+
+## `PUT /api/workspace/cadence`
+
+Requires operator or higher in the selected workspace. Sets fixed check and
+scrape intervals in seconds. `0` means automatic.
+
+```json
+{"check_interval_seconds": 600, "scrape_interval_seconds": 0}
+```
+
+Intervals below the workspace minimum (`minimum_check_interval_seconds`, or 900
+for scrapes) or above 31 days return `400`. So does `0` for an interval whose
+allowance has no limit, because automatic spreading needs a limit. A fixed
+interval runs until the
+monthly allowance is used up. The `200` response echoes the intervals and lists
+`warnings` when an interval needs more than the allowance:
+
+```json
+{
+  "check_interval_seconds": 600,
+  "scrape_interval_seconds": 0,
+  "warnings": ["This interval needs about 3240000 checks a month, more than the allowance of 1500000. Checks stop when the allowance is used up."]
+}
+```
+
+See [Check and scrape allowances](../user-guide/workspaces.md#check-and-scrape-allowances).
 
 ## `POST /api/workspaces`
 

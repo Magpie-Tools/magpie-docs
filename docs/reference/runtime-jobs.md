@@ -131,7 +131,15 @@ The durable email outbox is split across two coordination models:
 
 ## Timers
 
-Most intervals are configured in global settings (`checker_timer`, `scraper_timer`, `judge_timer`, `blacklist_timer`, runtime timers, GeoLite update timer).
+Most intervals are configured in global settings (`judge_timer`, `blacklist_timer`, runtime timers, GeoLite update timer).
+
+Check and scrape cadence are not timers. Each workspace has a monthly check
+allowance and scrape allowance. These default to `checker.monthly_checks_per_workspace`
+and `scraper.monthly_scrapes_per_workspace`. Every instance reloads allowances
+and current-month usage once a minute and derives each workspace's cadence from
+them. `checker_timer` and `scraper_timer` were removed. An older settings file
+that still has them is converted once at startup, to allowances that keep
+every existing workspace at least as fast as before.
 
 Retention routine interval/limits are configured via environment variables:
 
