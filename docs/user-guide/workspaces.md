@@ -145,9 +145,10 @@ checks per cycle = active proxies × enabled protocols × average requests per t
   therefore cost more allowance, as does a longer timeout that keeps failing.
 - Only active proxies count. Paused and archived proxies, including their
   tag-rule protocols, are not checked and do not count.
-- Checks are counted by the checker as it sends them, separately from proxy
-  history, which may drop results under heavy load. Every request is
-  charged even if its result is not stored.
+- Each request is charged just before the checker sends it, separately from
+  proxy history, which may drop results under heavy load. Every request is
+  charged even if its result is not stored. Usage counts in the month the
+  request was made, even when it is recorded a few seconds after midnight.
 - One scrape is one fetch of one subscribed scrape source.
 - Checks are never more frequent than once a minute, or the plan's minimum check
   interval if that is longer. Scrapes are never more frequent than every 15
@@ -157,10 +158,15 @@ checks per cycle = active proxies × enabled protocols × average requests per t
   rest of the month instead of using up the allowance early.
 - When an allowance is used up, the workspace's proxies or sources are not
   checked or scraped again until the next month. They stay active and keep
-  their last results. A checker stops as soon as its own count reaches the
-  allowance. When several checker instances serve one workspace, each sees
-  the others' checks within a minute, so usage can go slightly past the
-  allowance, by up to about one minute of checks.
+  their last results. A checker stops sending the workspace's requests,
+  retries included, as soon as its own count reaches the allowance. Requests
+  already on their way still finish, and when several checker instances serve
+  one workspace, each sees the others' checks within a minute. Usage can
+  therefore go slightly past the allowance, by up to about one minute of
+  checks.
+- If the allowance runs out during a protocol test's retries, the requests
+  already sent are charged, and the test produces no result. It does not
+  count as a failed check.
 - When several workspaces share a proxy or source, each one is checked or
   scraped and charged at its own cadence.
 
