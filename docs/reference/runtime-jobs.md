@@ -144,8 +144,14 @@ write the counts to `workspace_usage_periods.checks` every 10 seconds and
 before each reload, in the month each request was made. Each write is a
 numbered batch. A batch whose commit was not acknowledged is resent unchanged,
 and `workspace_usage_flushes` records each checker process's last applied
-batch, so a resend is never counted twice. Marks of processes that stopped
-writing more than seven days ago are deleted at startup. `checker_timer` and
+batch, so a resend is never counted twice. A failed batch is resent every 10
+seconds until it commits. If usage stays unwritten for
+`CHECK_USAGE_PAUSE_AFTER` (default 15 minutes), the instance pauses checking
+until a write succeeds, without discarding any usage, and `/readyz` reports a
+degraded `check_usage` component after one minute of failures. During such an
+outage, a crash loses the usage counted since the last successful write. Each
+process registers its batch mark before its first batch and refreshes it daily
+while idle. Marks not written for 30 days are deleted at startup. `checker_timer` and
 `scraper_timer` were removed. An older settings file that still has them is
 converted once at startup. Every existing workspace keeps the old timer as a
 fixed interval, and the instance default becomes unlimited.

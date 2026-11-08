@@ -165,6 +165,7 @@ In multi-instance deployments, all backend instances can poll and deliver from t
 - `ALLOW_PUBLIC_OBSERVABILITY_ENDPOINTS` (default non-production `true`, production `false`): controls public access to `/healthz`, `/readyz`, `/metrics`.
 - `OBSERVABILITY_TOKEN`: token accepted via `X-Observability-Token` when public observability access is disabled.
 - `READYZ_ALLOW_REDIS_DEGRADED` (default `false`): allows `readyz` to return degraded-ready status when Redis is unavailable.
+- `CHECK_USAGE_PAUSE_AFTER` (default `15m`, Go duration): how long metered check usage may stay unwritten to PostgreSQL before the instance pauses checking. Usage keeps being counted and retried, and checking resumes after the next successful write. `0` never pauses. After one minute of failed writes, `readyz` reports the `check_usage` component as degraded.
 
 ## GraphQL guards
 
