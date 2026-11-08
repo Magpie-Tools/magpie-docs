@@ -78,7 +78,9 @@ removed protocol, or override shared settings.
 TCP supports HTTP, HTTPS, SOCKS4, and SOCKS5. QUIC and HTTP/3 checks currently
 support HTTP and HTTPS with HTTPS judges. SOCKS checks require TCP. Magpie rejects settings whose matching tag combinations
 could leave SOCKS using QUIC or HTTP/3. Timeouts
-accept 1 through 65535 ms and retries accept 0 through 255.
+accept 1 through 65535 ms and retries accept 0 through 255. Every retry is a
+request and uses one check from the workspace's monthly allowance (see
+[Check and scrape allowances](./workspaces.md#check-and-scrape-allowances)).
 
 Judges, **Use HTTPS for SOCKS**, and automatic Pause/Delete settings remain
 workspace-wide. Switching profiles keeps drafts. **Save checker settings** saves all

@@ -137,9 +137,13 @@ Check and scrape cadence are not timers. Each workspace has a monthly check
 allowance and scrape allowance. These default to `checker.monthly_checks_per_workspace`
 and `scraper.monthly_scrapes_per_workspace`. Every instance reloads allowances
 and current-month usage once a minute and derives each workspace's cadence from
-them. `checker_timer` and `scraper_timer` were removed. An older settings file
-that still has them is converted once at startup, to allowances that keep
-every existing workspace at least as fast as before.
+them. Checkers count every request (retries included) in memory and write the
+counts to `workspace_usage_periods.checks` every 10 seconds and before each
+reload, independently of the statistics pipeline. A checker stops a workspace
+as soon as its own count reaches the allowance. `checker_timer` and
+`scraper_timer` were removed. An older settings file that still has them is
+converted once at startup. Every existing workspace keeps the old timer as a
+fixed interval, and the instance default becomes unlimited.
 
 Retention routine interval/limits are configured via environment variables:
 

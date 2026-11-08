@@ -119,8 +119,13 @@ instance default. When it is `true`, `monthly_*` is not enforced, no run-out
 is reported, and `needs_*_interval` is `true` until the workspace chooses a
 fixed interval. Until then it runs hourly.
 `allowances` reports the effective allowance, this month's metered use and the
-cadence derived from them. These values come from the allowance snapshot each
-instance refreshes once a minute, so they can lag slightly behind actual use.
+cadence derived from them. `used_checks` counts every request to a judge,
+retries included. `checks_per_cycle` is active routes × enabled protocols
+(including tag rules on active routes) × the average requests per protocol
+test measured this month. These values come from the allowance snapshot each
+instance refreshes once a minute, plus the responding instance's own checks
+since then, so they can lag slightly behind other instances' use. Saving an
+interval or allowance refreshes the snapshot before responding.
 `computed_at` is absent until the first snapshot includes the workspace. The
 interval fields are `0` when an allowance is exhausted.
 `requested_*_interval_seconds` is the workspace's fixed interval, or `0` for

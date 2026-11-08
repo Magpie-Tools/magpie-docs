@@ -79,9 +79,13 @@ one. A workspace with its own monthly allowance keeps it.
 
 These settings replace `checker.checker_timer` and `scraper.scraper_timer`.
 When the backend starts with a settings file that still contains those timers,
-it converts them once. It uses the larger of the default and what the busiest
-workspace needed for its previous cadence over a 31-day month, then saves the
-result.
+it converts them once, keeping the old behavior. Every existing workspace gets
+the old timer as its fixed check or scrape interval, and the instance default
+becomes unlimited (`unlimited_monthly_checks` and `unlimited_monthly_scrapes`),
+because the old timers had no monthly limit. Intervals are raised to the
+minimum (one minute for checks, 15 minutes for scrapes) and capped at 31 days.
+Workspaces created after the upgrade run hourly until they choose an interval.
+To introduce limits later, turn off **No monthly limit** and set allowances.
 
 ## Workspace capacity compatibility
 

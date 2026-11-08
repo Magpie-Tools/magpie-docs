@@ -134,11 +134,20 @@ allowance** and a monthly **scrape allowance**. Magpie spreads what is left of
 each allowance evenly over the rest of the calendar month (UTC):
 
 ```text
-check interval = time left in month × (active proxies × enabled protocols) ÷ checks left
+check interval = time left in month × checks per cycle ÷ checks left
+checks per cycle = active proxies × enabled protocols × average requests per test
 ```
 
-- One check is one protocol test of one proxy for this workspace. Its retries
-  are part of the same check.
+- One check is one request to a judge for this workspace. Retries are checks
+  too: a protocol test with two retries uses three checks. The average
+  requests per test is measured from this month's checks, so frequent retries
+  slow the cadence instead of using up the allowance early. More retries
+  therefore cost more allowance, as does a longer timeout that keeps failing.
+- Only active proxies count. Paused and archived proxies, including their
+  tag-rule protocols, are not checked and do not count.
+- Checks are counted by the checker as it sends them, separately from proxy
+  history, which may drop results under heavy load. Every request is
+  charged even if its result is not stored.
 - One scrape is one fetch of one subscribed scrape source.
 - Checks are never more frequent than once a minute, or the plan's minimum check
   interval if that is longer. Scrapes are never more frequent than every 15
@@ -148,7 +157,10 @@ check interval = time left in month × (active proxies × enabled protocols) ÷ 
   rest of the month instead of using up the allowance early.
 - When an allowance is used up, the workspace's proxies or sources are not
   checked or scraped again until the next month. They stay active and keep
-  their last results.
+  their last results. A checker stops as soon as its own count reaches the
+  allowance. When several checker instances serve one workspace, each sees
+  the others' checks within a minute, so usage can go slightly past the
+  allowance, by up to about one minute of checks.
 - When several workspaces share a proxy or source, each one is checked or
   scraped and charged at its own cadence.
 
@@ -190,7 +202,8 @@ only counts usage.
   warning is shown. Usage is still metered.
 
 The **Workspace** page shows each allowance, how much has been used and the
-current cadence. Workspaces use the instance defaults unless an administrator
+current cadence. It reloads them every minute while it is open, and saving an
+interval or allowance shows the new cadence at once. Workspaces use the instance defaults unless an administrator
 sets their own allowance (see [Administration](./admin.md)).
 
 Checker attempts are attributed through the existing asynchronous statistics
