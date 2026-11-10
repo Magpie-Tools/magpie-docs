@@ -7,11 +7,14 @@ New to judges or protocols? Start with [How Magpie works](../learn/how-magpie-wo
 For request sharing, retry semantics, and workspace-specific verdicts, read
 [the backend checker chapter](../backend/checker.md).
 
-The global checker timer sets the interval between completed check cycles for a
-proxy route. Default and tag profiles choose which checks run within that cycle;
-they do not shorten the timer. Each enabled protocol can produce its own history
-entry, so several entries close together can belong to one cycle. After the cycle
-finishes, the route waits the configured interval before its next scheduled check.
+The workspace's monthly check allowance sets the interval between check cycles
+for its proxy routes, unless an operator has chosen a fixed interval (see
+[Check and scrape allowances](./workspaces.md#check-and-scrape-allowances)).
+Each enabled protocol uses one check, so enabling more protocols, or adding
+proxies, makes the cadence slower. Default and tag profiles choose which checks
+run within a cycle. Each enabled protocol can produce its own history entry, so
+several entries close together can belong to one cycle. After the cycle
+finishes, the route waits for the workspace's cadence before its next check.
 
 ## Workspace settings
 
@@ -75,7 +78,9 @@ removed protocol, or override shared settings.
 TCP supports HTTP, HTTPS, SOCKS4, and SOCKS5. QUIC and HTTP/3 checks currently
 support HTTP and HTTPS with HTTPS judges. SOCKS checks require TCP. Magpie rejects settings whose matching tag combinations
 could leave SOCKS using QUIC or HTTP/3. Timeouts
-accept 1 through 65535 ms and retries accept 0 through 255.
+accept 1 through 65535 ms and retries accept 0 through 255. Every retry is a
+request and uses one check from the workspace's monthly allowance (see
+[Check and scrape allowances](./workspaces.md#check-and-scrape-allowances)).
 
 Judges, **Use HTTPS for SOCKS**, and automatic Pause/Delete settings remain
 workspace-wide. Switching profiles keeps drafts. **Save checker settings** saves all

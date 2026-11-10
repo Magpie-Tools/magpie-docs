@@ -197,10 +197,12 @@ lifecycle states. Overflow routes can be stored as paused for capacity.
 
 ## The same proxy is checked every few seconds
 
-Check the global checker timer. Several protocol results can appear together
-within one cycle, but repeated successful results for the same protocol every
-second indicate that the route is being scheduled too soon. Tag checker rules
-change the checks in a cycle and do not override its interval.
+Check the workspace's check cadence on the **Workspace** page. Magpie derives
+it from the monthly check allowance, and it is never shorter than one minute.
+Several protocol results can appear together within one cycle. Repeated
+successful results for the same protocol every second mean the route is being
+scheduled too soon. Tag checker rules change the checks in a cycle and do not
+override its cadence.
 
 Older backend builds published a one-second placeholder interval to Redis during
 package initialization, before loading settings. Starting a test process,
@@ -313,7 +315,7 @@ Current builds calculate insert batch sizes separately for each table and split
 large hash lookups, including the workspace filter parameter.
 
 Upgrade the backend to a build containing this fix, then use **Scrape now** on
-failed sources or wait for their normal scrape interval. Reducing browser
+failed sources or wait for their normal scrape cadence. Reducing browser
 concurrency or switching fetching mode does not fix this database error. No
 additional schema migration or batch-size environment setting is needed for
 this fix.

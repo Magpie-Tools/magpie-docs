@@ -125,7 +125,92 @@ For the full state transition diagram, see [Proxies](./proxies.md).
 
 ## Subscription and usage model
 
-Each workspace has one subscription record and one capacity allowance. The model already separates included capacity, additional capacity, permitted overage, operator seats, check interval, statistics retention, check attempts, and managed traffic usage. Billing-provider integration is intentionally not exposed yet.
+Each workspace has one subscription record and one capacity allowance. The model already separates included capacity, additional capacity, permitted overage, operator seats, minimum check interval, monthly check and scrape allowances, statistics retention, check attempts, and managed traffic usage. Billing-provider integration is intentionally not exposed yet.
+
+### Check and scrape allowances
+
+A workspace does not have a fixed check interval. It has a monthly **check
+allowance** and a monthly **scrape allowance**. Magpie spreads what is left of
+each allowance evenly over the rest of the calendar month (UTC):
+
+```text
+check interval = time left in month × checks per cycle ÷ checks left
+checks per cycle = active proxies × enabled protocols × average requests per test
+```
+
+- One check is one request to a judge for this workspace. Retries are checks
+  too: a protocol test with two retries uses three checks. The average
+  requests per test is measured from this month's checks, so frequent retries
+  slow the cadence instead of using up the allowance early. More retries
+  therefore cost more allowance, as does a longer timeout that keeps failing.
+- Only active proxies count. Paused and archived proxies, including their
+  tag-rule protocols, are not checked and do not count.
+- Each request is charged just before the checker sends it, separately from
+  proxy history, which may drop results under heavy load. Every request is
+  charged even if its result is not stored. Usage counts in the month the
+  request was made, even when it is recorded a few seconds after midnight.
+- One scrape is one fetch of one subscribed scrape source.
+- Checks are never more frequent than once a minute, or the plan's minimum check
+  interval if that is longer. Scrapes are never more frequent than every 15
+  minutes.
+- Adding proxies or protocols slows the cadence, and removing them speeds it up.
+  Magpie recalculates every minute, so heavy use early in the month slows the
+  rest of the month instead of using up the allowance early.
+- When an allowance is used up, the workspace's proxies or sources are not
+  checked or scraped again until the next month. They stay active and keep
+  their last results. A checker stops sending the workspace's requests,
+  retries included, as soon as its own count reaches the allowance. Requests
+  already on their way still finish, and when several checker instances serve
+  one workspace, each sees the others' checks within a minute. Usage can
+  therefore go slightly past the allowance, by up to about one minute of
+  checks.
+- If the allowance runs out during a protocol test's retries, the requests
+  already sent are charged, and the test produces no result. It does not
+  count as a failed check.
+- When several workspaces share a proxy or source, each one is checked or
+  scraped and charged at its own cadence.
+
+#### Choose your own interval
+
+By default the check and scrape intervals are **Automatic**: the remaining
+allowance is spread evenly, as described above. Operators and higher can
+choose a **Fixed** interval instead, for example "every 10 minutes", in the
+**Monthly allowances** card on the **Workspace** page.
+
+- A fixed interval is used as is. It must be at least the plan's minimum (one
+  minute for checks, 15 minutes for scrapes) and at most 31 days.
+- Checks or scrapes stop when the allowance is used up, then resume next month.
+- While you edit an interval, the page warns if it would need more than the
+  monthly allowance. It shows roughly how many checks a month it needs and
+  when the allowance would run out. Saving shows the same warning. After
+  saving, the card keeps showing when the allowance is expected to run out at
+  that interval.
+- The estimate uses the current number of active proxies × enabled protocols
+  (or subscribed sources), so it changes as you add or remove proxies.
+
+API: `PUT /api/workspace/cadence` with
+`{"check_interval_seconds": 600, "scrape_interval_seconds": 0}`. Use `0` for
+automatic. The response includes a `warnings` array.
+
+#### Workspaces without a monthly limit
+
+An administrator can remove the limit on checks, scrapes or both, for one
+workspace or as the instance default. The card then shows **No limit** and
+only counts usage.
+
+- With no limit there is nothing to spread, so the interval must be
+  **Fixed**. **Automatic** is unavailable, and the API rejects `0` for that
+  interval with `400`.
+- Until operators choose an interval, the workspace runs every hour. The
+  editor starts on one hour and offers to save it.
+- The plan's minimum interval still applies.
+- Checks and scrapes never stop for allowance reasons, and no over-allowance
+  warning is shown. Usage is still metered.
+
+The **Workspace** page shows each allowance, how much has been used and the
+current cadence. It reloads them every minute while it is open, and saving an
+interval or allowance shows the new cadence at once. Workspaces use the instance defaults unless an administrator
+sets their own allowance (see [Administration](./admin.md)).
 
 Checker attempts are attributed through the existing asynchronous statistics
 pipeline. Hosted rotators meter authenticated/accepted requests or tunnel

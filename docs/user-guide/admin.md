@@ -12,16 +12,29 @@ which scope you are editing before changing a setting.
 
 | Change | Where it belongs | Who can change it |
 | --- | --- | --- |
-| Number of checker/scraper workers or the cycle interval | Global checker/scraper pages | Instance administrator. |
+| Number of checker/scraper workers and the default monthly check and scrape allowances | Global checker/scraper pages | Instance administrator. |
+| One workspace's own monthly allowances | `PUT /api/global/workspaces/{id}/allowances`, or the Workspace page for workspaces you belong to | Instance administrator. |
 | Default and tag-specific protocols, timeout, retries, judges, failure actions | Workspace checker settings | Workspace operator or higher. |
 | Workspace members, capacity display, invitations | Workspace page | Role-dependent workspace access. |
 | Database, Redis, TLS ingress, secrets, process limits | Deployment configuration | Installation operator. |
 | Columns and accent color | Personal display preferences | The signed-in member/browser. |
 
 Global defaults seed new workspace settings. Editing those defaults is not a
-replacement for editing existing workspaces' saved checker profiles. In
-particular, the global checker timer controls route cycle scheduling; tag rules
-do not define separate intervals.
+replacement for editing existing workspaces' saved checker profiles.
+
+Administrators do not set a check or scrape interval. They set how many checks
+and scrapes a workspace may use per month. Magpie derives each workspace's
+cadence from that, unless the workspace's operators choose a fixed interval,
+which then runs until the allowance is used up (see
+[Check and scrape allowances](./workspaces.md#check-and-scrape-allowances)).
+The instance defaults on the global checker and scraper pages apply to every
+workspace without its own allowance. **No monthly limit** removes the default
+limit. Those workspaces then run at a fixed interval chosen by their operators,
+and hourly until they choose one. On a workspace's own page, the allowance
+row has the same **No limit** option for that workspace. Raising a default
+speeds up those workspaces within about a minute for new cycles. Routes already
+scheduled far ahead are revisited within six hours. Tag rules do not define
+separate intervals.
 
 ## Change an instance setting
 

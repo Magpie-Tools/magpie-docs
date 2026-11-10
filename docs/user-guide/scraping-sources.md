@@ -115,10 +115,16 @@ The list and detail page show the last scrape outcome:
 The timestamp is the start time of the attempt whose result is shown. Proxy
 health is separate: **No data** in a health bar does not mean that fetching failed.
 
-New sources enter the queue immediately. Every completed fetch waits the
-configured scrape interval before the next attempt, whether it succeeded or
-failed. Timeouts, HTTP 429, and HTTP 5xx follow the same interval. Repeated
-failures do not multiply the interval.
+New sources enter the queue immediately. After each completed fetch, the next
+attempt waits for the source's scrape cadence, whether the fetch succeeded or
+failed. Timeouts, HTTP 429 and HTTP 5xx follow the same cadence. Repeated
+failures do not lengthen it.
+
+The cadence comes from your workspace's monthly scrape allowance, spread over
+your subscribed sources and the rest of the month, and is never shorter than
+15 minutes (see [Check and scrape allowances](./workspaces.md#check-and-scrape-allowances)).
+Each fetch uses one scrape from every workspace it serves. A workspace that has
+used its whole allowance is not scraped again until the next month.
 
 A valid provider `Retry-After` can postpone the next attempt further. The detail
 page shows **Next scrape** and its scheduling reason. The time is the earliest

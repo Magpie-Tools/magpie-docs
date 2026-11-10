@@ -47,6 +47,14 @@ lookups require a budget of at least 3 credits. See
     "socks4": false,
     "socks5": false
   },
+  "checker": {
+    "monthly_checks_per_workspace": 1500000,
+    "unlimited_monthly_checks": false
+  },
+  "scraper": {
+    "monthly_scrapes_per_workspace": 3000,
+    "unlimited_monthly_scrapes": false
+  },
   "proxy_limits": {
     "enabled": false,
     "max_per_user": 1000,
@@ -54,6 +62,30 @@ lookups require a budget of at least 3 credits. See
   }
 }
 ```
+
+## Check and scrape allowances
+
+`checker.monthly_checks_per_workspace` (default `1500000`) and
+`scraper.monthly_scrapes_per_workspace` (default `3000`) are the monthly
+allowances of every workspace that has none of its own. Magpie derives each
+workspace's check and scrape cadence from them, so there is no interval
+setting. A missing or `0` value falls back to the default. See
+[Check and scrape allowances](../user-guide/workspaces.md#check-and-scrape-allowances).
+
+`checker.unlimited_monthly_checks` and `scraper.unlimited_monthly_scrapes`
+(default `false`) remove the default limit. Workspaces that inherit it run at
+a fixed interval chosen on their Workspace page, and hourly until they choose
+one. A workspace with its own monthly allowance keeps it.
+
+These settings replace `checker.checker_timer` and `scraper.scraper_timer`.
+When the backend starts with a settings file that still contains those timers,
+it converts them once, keeping the old behavior. Every existing workspace gets
+the old timer as its fixed check or scrape interval, and the instance default
+becomes unlimited (`unlimited_monthly_checks` and `unlimited_monthly_scrapes`),
+because the old timers had no monthly limit. Intervals are raised to the
+minimum (one minute for checks, 15 minutes for scrapes) and capped at 31 days.
+Workspaces created after the upgrade run hourly until they choose an interval.
+To introduce limits later, turn off **No monthly limit** and set allowances.
 
 ## Workspace capacity compatibility
 

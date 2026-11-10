@@ -48,9 +48,11 @@ object's `plugins.ipgeolocation` field. See [IPGeolocation.io](../user-guide/ipg
 
 ## `POST /api/global/proxies/requeue` (admin)
 
-Requires admin role. Redistributes waiting proxy checks across the current
-check interval. Checks already in progress retain their leases and finish
-normally. Expired leases remain available for workers to recover.
+Requires admin role. Redistributes waiting proxy checks across the fastest
+workspace check cadence, but no less than 15 minutes and no more than 6 hours.
+Each workspace is still checked only as often as its monthly check allowance
+permits. Checks already in progress retain their leases and finish normally.
+Expired leases remain available for workers to recover.
 
 Success (`200`):
 
@@ -64,12 +66,29 @@ Success (`200`):
 `proxy_count` is the number of waiting queue members actually rescheduled.
 It excludes leased members, including leases claimed during the operation.
 
+## `PUT /api/global/workspaces/{id}/allowances` (admin)
+
+Requires the global admin role. Sets one workspace's own monthly check and
+scrape allowances. `0` makes the workspace use the instance default again.
+`unlimited_checks` or `unlimited_scrapes` removes the limit and ignores the
+matching monthly value. The workspace must then choose a fixed interval and
+runs hourly until it does. Cadence follows within about a minute.
+
+```json
+{"monthly_checks": 8000000, "monthly_scrapes": 0, "unlimited_checks": false, "unlimited_scrapes": true}
+```
+
+Success (`200`) echoes the four fields and `workspace_id`.
+An unknown workspace returns `404`.
+
 ## Requeue one proxy {/* #requeue-one-proxy */}
 
 `POST /api/global/proxies/{id}/requeue` requires the global admin role and
 access to the selected workspace. It reloads the managed route and queues it
 for an immediate worker visit. It does not run the check synchronously or
-wait for statistics to commit.
+wait for statistics to commit. The visit checks the route only for workspaces
+whose check cadence is due and which have allowance left. Otherwise the route
+returns to the queue without a check.
 
 Send your bearer token and, when needed, `X-Workspace-ID`. No body is required.
 For example, with your own token, workspace ID, and route ID:
