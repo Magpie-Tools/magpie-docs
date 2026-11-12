@@ -122,6 +122,7 @@ Deleting a tag removes that tag from every proxy and source rule without deletin
 
 - `GET /api/proxies/{id}`
 - `GET /api/proxies/{id}/statistics?limit=...`
+- `GET /api/proxies/{id}/statistics/hourly?hours=...`
 - `GET /api/proxies/{id}/statistics/{statisticId}`
 
 ## Delete proxies

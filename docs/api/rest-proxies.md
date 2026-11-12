@@ -310,6 +310,41 @@ matches an enabled current check; it does not mean this is the latest event.
 Obsolete and legacy rows remain historical. Legacy rows lack configuration
 attribution and never qualify as current after snapshot initialization.
 
+## `GET /api/proxies/{id}/statistics/hourly`
+
+Requires auth. Groups this workspace's check history for one proxy into UTC
+hours. The proxy detail page uses it for the availability grid and the
+response-time chart.
+
+Query params:
+
+- `hours` (optional integer from `1` to `168`, default `72`): length of the
+  window ending now. The window starts on an hour boundary, so the current
+  hour is the last bucket. Other values return `400`.
+
+Response:
+
+```json
+{
+  "since": "2026-02-09T10:00:00Z",
+  "hours": [
+    {
+      "hour": "2026-02-12T09:00:00Z",
+      "checks": 12,
+      "failed": 1,
+      "avg_response_time": 4238
+    }
+  ]
+}
+```
+
+Hours without checks are omitted. A check counts as failed by this workspace's
+own verdict, the same rule `GET /api/proxies/{id}/statistics` applies, and the
+buckets include every protocol and configuration checked in that hour.
+`avg_response_time` averages the successful checks in milliseconds and is `0`
+when every check in the hour failed. History removed by statistics retention
+is not reported.
+
 ## `GET /api/proxies/{id}/statistics/{statisticId}`
 
 Requires auth.
