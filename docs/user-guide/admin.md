@@ -85,7 +85,11 @@ should read the current object and preserve fields they are not changing.
 A partial global object is different from a partial workspace-settings save.
 
 See the [admin API](../api/rest-admin-and-system.md) for global requeue actions.
-Prefer **Check now** on one active route when investigating a problem. A bulk
-requeue redistributes waiting work and can change load across the instance.
+Use **Check now** on one active route when investigating a problem: it checks
+that route at once for every workspace that manages it. A bulk requeue does
+not force checks. It makes workers revisit every waiting route within a short
+time, and a visit checks a route only for workspaces whose scheduled check
+has come. This realigns the queue with the current cadences and adds queue
+load across the instance while it runs.
 Use [performance validation](../operations/performance-validation.md) before
 making capacity claims from worker-count changes.

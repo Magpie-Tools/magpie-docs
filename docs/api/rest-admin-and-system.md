@@ -48,11 +48,14 @@ object's `plugins.ipgeolocation` field. See [IPGeolocation.io](../user-guide/ipg
 
 ## `POST /api/global/proxies/requeue` (admin)
 
-Requires admin role. Redistributes waiting proxy checks across the fastest
-workspace check cadence, but no less than 15 minutes and no more than 6 hours.
-Each workspace is still checked only as often as its monthly check allowance
-permits. Checks already in progress retain their leases and finish normally.
-Expired leases remain available for workers to recover.
+Requires admin role. Makes every waiting proxy route due for a worker visit
+within the fastest workspace check cadence, but no less than 15 minutes and no
+more than 6 hours. A visit checks a route only for workspaces that have reached
+their next scheduled check. Otherwise the route goes back to its workspaces'
+schedules without a check. The action therefore realigns the queue with the
+current cadences. It does not check every route and uses no workspace's
+allowance early. Checks already in progress retain their leases and finish
+normally. Expired leases remain available for workers to recover.
 
 Success (`200`):
 
@@ -86,9 +89,12 @@ An unknown workspace returns `404`.
 `POST /api/global/proxies/{id}/requeue` requires the global admin role and
 access to the selected workspace. It reloads the managed route and queues it
 for an immediate worker visit. It does not run the check synchronously or
-wait for statistics to commit. The visit checks the route only for workspaces
-whose check cadence is due and which have allowance left. Otherwise the route
-returns to the queue without a check.
+wait for statistics to commit. The visit checks the route for every workspace
+that manages it and has allowance left, ahead of their check cadences, and
+each of those workspaces is charged for the check. Afterwards the route
+returns to its workspaces' schedules. If a worker is checking the route when
+the request arrives, that check no longer reschedules the route, and the
+route is checked again at once.
 
 Send your bearer token and, when needed, `X-Workspace-ID`. No body is required.
 For example, with your own token, workspace ID, and route ID:

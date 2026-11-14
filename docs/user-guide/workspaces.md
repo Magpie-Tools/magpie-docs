@@ -168,7 +168,26 @@ checks per cycle = active proxies × enabled protocols × average requests per t
   already sent are charged, and the test produces no result. It does not
   count as a failed check.
 - When several workspaces share a proxy or source, each one is checked or
-  scraped and charged at its own cadence.
+  scraped and charged at its own cadence. A workspace that adds a proxy
+  another workspace already checks gets its first check at its own cadence,
+  however slow the other workspace's is.
+- Each proxy has its own scheduled check times, spread across the interval, so
+  a workspace's proxies are not all checked at once. A new or reactivated
+  proxy is first checked at its next scheduled time, not at once.
+- With an **Automatic** interval, one proxy's checks are not exactly the shown
+  interval apart. Magpie recalculates the interval every minute, so it keeps
+  each proxy's check times fixed and only adds or drops some of them: two
+  scheduled check times of one proxy are more than half and at most twice
+  the interval apart, and average the interval.
+- A check starts at its scheduled time, or later when workers are busy or
+  the previous check of that proxy is still running.
+- Workspaces that check the same proxy share its checks. A check can
+  therefore come before its scheduled time, by less than the time until the
+  proxy would next be checked for another workspace. Two checks of one proxy
+  can then be closer together or further apart than their scheduled times
+  are. Each workspace is still charged for its own checks only, one per
+  scheduled time.
+- A change of interval or allowance reaches every proxy within six hours.
 
 #### Choose your own interval
 
@@ -177,7 +196,9 @@ allowance is spread evenly, as described above. Operators and higher can
 choose a **Fixed** interval instead, for example "every 10 minutes", in the
 **Monthly allowances** card on the **Workspace** page.
 
-- A fixed interval is used as is. It must be at least the plan's minimum (one
+- A fixed interval is used as is, from the start of one check of a proxy to
+  the start of the next. A check that takes longer than the interval skips
+  the times it overlapped. It must be at least the plan's minimum (one
   minute for checks, 15 minutes for scrapes) and at most 31 days.
 - Checks or scrapes stop when the allowance is used up, then resume next month.
 - While you edit an interval, the page warns if it would need more than the

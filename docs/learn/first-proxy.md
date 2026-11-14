@@ -57,15 +57,18 @@ already known.
 ## 3. Follow the first check
 
 Open a route's detail page. Check its lifecycle state and recent statistics.
-New work is scheduled through Redis and the checker. Initial import scheduling
-can spread checks across the global interval, whose embedded default is five
-hours. Result persistence is also asynchronous. A large pool does not become
-healthy immediately after an upload.
+New work is scheduled through Redis and the checker. An imported route is
+first checked at its next scheduled time on the workspace's check cadence, so
+an import is spread across that cadence. Result persistence is also
+asynchronous. A large pool does not become healthy immediately after an
+upload.
 
 On your own small learning installation, open the active route's Actions menu
 in the proxy list and choose **Check now**. This action is visible to instance
-administrators. It queues that route for an immediate worker visit and still
-uses the normal result pipeline. Integration clients can use the
+administrators. It queues that route for an immediate worker visit, which
+checks it for every workspace that manages it and charges each of them for
+the check. It still uses the normal result pipeline. Integration clients can
+use the
 [per-route requeue API](../api/rest-admin-and-system.md#requeue-one-proxy).
 Avoid requeueing an entire large pool just to inspect one route.
 

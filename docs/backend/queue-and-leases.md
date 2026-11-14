@@ -20,7 +20,10 @@ worker leaves work recoverable when its lease expires.
 
 A **sorted set** orders members by their score. Shards split the large queue
 into several sets. The heads index tells the worker which shard to inspect
-first. Batch imports spread initial due times across the checking interval.
+first. A route is first due at the earliest scheduled check time of any
+workspace that manages it, which spreads an import across the workspace's
+check cadence. An import that adds a workspace with a faster cadence pulls an
+already queued route forward; no import postpones one.
 
 The payload describes what to check. The sorted-set score describes when to
 check it. Normal requeues change scheduling state without writing the payload.
@@ -80,10 +83,25 @@ sequenceDiagram
     Q-->>A: Lease completion accepted
 ```
 
-`RequeueProxy` schedules the next check from the later of the previous
-scheduled time and now, plus the global checker interval. It avoids repeatedly
-running overdue work to catch up. Tag profiles change the checks inside the
-cycle, not this interval.
+`RequeueProxy` makes the route due again at the time the checker gives it: the
+earliest scheduled check time of any workspace that manages the route. Each
+workspace's check cadence gives it fixed check times on each route, computed
+from the in-memory allowance snapshot. A dequeue checks the route only for the
+workspaces that have reached one of theirs, so every workspace keeps its own
+cadence on a shared route. Workspaces share those checks. The check times of
+all workspaces on one route are laid over each other, so equal cadences and
+cadences that divide each other are due at the same dequeues. A cycle that
+checks a route also serves a workspace whose next check time comes before the
+route's next visit, ahead of that time. A shared route is therefore checked
+about as often as its fastest workspace alone would check it: exactly for
+fixed intervals and for automatic cadences with the same minimum interval,
+and a few percent more often for other combinations. A workspace the cycle
+checked
+waits for its first time after the cycle ended, which keeps slow checks from
+running back to back. A route whose workspaces have no check time within six
+hours is revisited after at most six hours without a check. Tag profiles
+change the checks inside the cycle. They affect this schedule only through
+the number of checks per cycle, from which an automatic cadence is computed.
 
 ## The default queue path has a deliberate cost boundary
 
