@@ -26,6 +26,15 @@ flowchart TD
     Ownership --> Requeue["Complete lease and schedule, or remove inactive route"]
 ```
 
+A claimed route is checked for the workspaces that have reached one of their
+scheduled check times on it, and for those whose next check time comes before
+the route's next visit: they share the check. Each workspace's check cadence
+gives it fixed check times per route, and the route is queued for the earliest
+of them.
+If no workspace is due, for example on a six-hourly revisit of a slowly
+checked route, the worker requeues the route without requests or database
+work.
+
 Workers renew leases as needed between attempts. Lease loss, cancellation, or
 an interrupted cycle can leave work for recovery rather than producing an
 ordinary failed check.
