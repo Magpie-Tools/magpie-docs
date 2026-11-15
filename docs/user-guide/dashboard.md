@@ -47,17 +47,27 @@ collected and, when it is not current, its state:
 | --- | --- |
 | No label | The snapshot was published in the last 30 seconds, or during this page load. |
 | Not current | The snapshot is up to ten minutes old, or the last rebuild failed while older data is still valid. A rebuild runs when one is allowed. |
-| Updating | No valid snapshot yet, or a rebuild is running. The page asks again every few seconds for up to a minute. Parts without data show a dash. |
+| Updating | No valid snapshot yet, a rebuild is running, or you chose to wait for results under new checker settings. The page asks again every few seconds. Parts without data show a dash. |
+| Previous results | Checker settings changed, and the health figures are still from the earlier settings. The header shows how old they are. |
 | Update failed | The last rebuild failed and nothing valid is stored. The next rebuild is retried with a growing delay of up to ten minutes. |
 
 A page load that finds an old snapshot starts one rebuild and waits up to two
 seconds for it. Each workspace is rebuilt at most once every 30 seconds across
 all instances, and a workspace nobody views is never rebuilt.
 
-After a change to checker settings, health figures (alive routes, recent
-checks, fastest routes and the judge breakdown) stay empty while the change is
-being applied, and the header says so. Health computed under earlier settings
-is never shown. Inventory figures stay visible.
+The health figures are alive routes, recent checks, fastest routes and the
+judge breakdown. After you change checker settings, the backend applies the
+change and then builds the health figures again under the new settings. On a
+large workspace this takes minutes. Meanwhile the dashboard keeps showing the
+last results, labelled **Previous results** with their age. The header also
+says what is still running: "Applying checker settings", then "Building
+results for the new checker settings".
+
+Choose **Wait for new results** to hide the previous figures instead. They
+show a dash until results under the new settings arrive. **Show previous
+results** brings them back. Your browser remembers the choice. Either way, the
+page keeps checking for the new results for up to 30 minutes and shows them as
+soon as they are ready. Inventory figures stay visible throughout.
 
 "Checks this month" and "Total checks" are read live from the usage meter on
 every load. "Checks this month" uses the same count as the workspace

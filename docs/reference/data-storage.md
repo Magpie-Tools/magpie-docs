@@ -75,9 +75,17 @@ stores replay floors so retired event identities still reject historical replays
 restore PostgreSQL and Redis from coordinated backups.
 
 `dashboard_snapshots` stores one dashboard snapshot per workspace and payload
-version: a JSON payload of at most 256 KiB, the checker generation its health
-parts were built under, and the lease that fences rebuilds, whose epochs come
-from `dashboard_lease_epoch_seq`. Rows cascade with their workspace; orphan
+version. Each row holds:
+
+- a JSON inventory payload;
+- the last health parts built on a clean workspace, with the checker
+  generation and collection time they were built under;
+- the lease that fences rebuilds, whose epochs come from
+  `dashboard_lease_epoch_seq`.
+
+The payload and the health parts together are at most 256 KiB. A rebuild that
+cannot compute current health keeps the previous health parts, so the
+dashboard can show them as previous results while checker settings apply. Rows cascade with their workspace; orphan
 cleanup deletes rows nobody has touched for seven days. They are derived and can
 be deleted at any time; the next dashboard request rebuilds them. Dashboard check
 figures read `workspace_usage_periods`.
