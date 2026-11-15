@@ -79,8 +79,10 @@ query DashboardData($proxyPage: Int!) {
     dashboardView {
       status
       rebuilding
-      healthMasked
+      checkerSettingsPending
+      healthOutdated
       collectedAt
+      healthCollectedAt
       info {
         totalChecks
         checksThisMonth
@@ -141,7 +143,8 @@ A request that finds a snapshot older than 30 seconds, or one without health
 for the current checker settings, starts at most one rebuild and waits up to
 two seconds for it. `rebuilding` is true while a rebuild runs on any instance.
 Clients that see `PENDING` or `rebuilding` can ask again after a few seconds;
-the dashboard page does so for up to a minute.
+the dashboard page does so for up to a minute, and for up to 30 minutes while
+`healthOutdated` is true.
 
 - Snapshot fields are null while the snapshot has no valid value for them,
   never zero. `info` itself is never null.
@@ -149,9 +152,13 @@ the dashboard page does so for up to a minute.
   meter on every request, in every status. `collectedAt` does not describe
   them. Both count outbound check requests, retries included; they are Floats
   because lifetime totals exceed the 32-bit GraphQL `Int`.
-- While checker settings are being applied, `healthMasked` is true and
-  `recentProxyChecks`, `fastestAliveProxies` and `info.judgeValidProxies` are
-  empty lists. Health computed under earlier settings is never returned.
+- `aliveCount`, `recentProxyChecks`, `fastestAliveProxies` and
+  `info.judgeValidProxies` are the health fields. Results under new checker
+  settings take time to build. Until then the health fields keep the previous
+  result, computed under the earlier settings, and `healthOutdated` is true.
+  `healthCollectedAt` says when that result was collected.
+  `checkerSettingsPending` is true while the backend is still applying the
+  change. The health fields are null only when no result was ever built.
 - `recentProxyChecks` accepts a limit up to 50 and `fastestAliveProxies` up to
   100.
 - The field is resolved once per request: aliases share one result and one
