@@ -52,23 +52,30 @@ includes its existing table check; it does not prove the upsert reached the
 server. Timing fields report milliseconds for owner, projection and source
 work. These fields support diagnosis and do not certify capacity.
 
-Dashboard refreshes pass job cancellation into all database reads, including
-delayed daily-counter backfills. Every 30 seconds, the normal timer snapshots
-components requested within the last two minutes and refreshes them serially,
-rechecking demand before each component. It does not scan every workspace or
-renew demand itself. Info, recent checks and fastest routes are independent
-keys, including custom list limits. Demand and cached entries are process-local
-and expire after idle; restarting clears them.
+Dashboards have no timer and no prewarm. A dashboard request reads the
+workspace's snapshot row in PostgreSQL and, when it is older than 30 seconds or
+lacks health for the current checker settings, the instance that received the
+request may build it:
 
-Each successful entry is eligible for cache hits for at most 30 seconds. A
-cold or expired request loads synchronously or joins the same component's
-refresh. Each loader inherits its caller context and a 30-second child bound.
-Canceled or failed refreshes retain the previous stored snapshot without
-granting an expired hit. Delayed daily-counter backfills follow the refresh's
-cancellation and completion lifecycle. Historical counter backfill for unread
-workspaces waits until their dashboard counts are requested; this timer is
-not an unattended all-workspace historical-backfill job. The explicit force
-prewarm still visits all workspaces for strict development fixture startup.
+- A build is admitted under a cluster-wide advisory lock when no other lease is
+  active for the workspace, its 30-second cooldown or failure backoff has
+  passed, and fewer than `DASHBOARD_BUILD_CLUSTER_LIMIT` (4) builds run across
+  all instances. Each instance runs at most `DASHBOARD_BUILD_INSTANCE_LIMIT`
+  (2), and local requests for one workspace share one build. Waits for locks
+  end after 250 ms and count as not admitted.
+- Each lease takes a new epoch from a sequence. The publish and failure updates
+  apply only while that epoch still holds the lease.
+- A build runs the dashboard queries on a detached context with
+  `DASHBOARD_BUILD_DEADLINE` (30 s), at most
+  `DASHBOARD_BUILD_STATEMENT_CONCURRENCY` (2) at once, each in its own
+  read-only transaction with a statement timeout capped at the remaining
+  budget. The lease lasts the deadline plus 15 seconds.
+- A failed build backs off 30 seconds, doubling up to ten minutes. Stopping an
+  instance cancels its builds and clears their leases without counting a
+  failure.
+- A requesting client waits at most two seconds. A workspace nobody views costs
+  nothing.
+
 Judge and fastest-route queries retain their existing workspace scope and
 query fan-out; fastest-route metadata loads after selecting the winners.
 
@@ -102,10 +109,11 @@ protection. Queue marker checks run every ten seconds; missing queues rebuild
 from PostgreSQL under shared leadership, with readiness at 503 after detection.
 
 Statistics maintenance precreates months even when migrations or history retention
-are disabled, moves affected DEFAULT rows, and compacts older daily counts into
-lifetime totals. Stream maintenance retires acknowledged identities behind a
-durable replay floor. Orphan cleanup drains counter tables hourly with a 45-second
-budget and retries failures or interruptions after one minute by default.
+are disabled and moves affected DEFAULT rows. Stream maintenance retires
+acknowledged identities behind a durable replay floor. Orphan cleanup runs hourly
+with a 45-second budget and retries failures or interruptions after one minute by
+default. Each pass also deletes dashboard snapshot rows nobody has touched for
+seven days, in batches of 500 under the dashboard admission lock.
 
 Obsolete latest-evidence cleanup evaluates at most
 `PROXY_STATISTICS_RETENTION_BATCH_SIZE` candidate pointers per page in primary-key order.

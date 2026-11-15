@@ -74,12 +74,13 @@ even if an optional notification cannot be sent.
 The job families include:
 
 - History, response-body, snapshot, and timeline retention.
-- Partition preparation, daily-counter compaction, and stream replay-ledger
-  maintenance.
-- Orphan-route cleanup after workspace management disappears.
+- Partition preparation and stream replay-ledger maintenance.
+- Orphan-route cleanup after workspace management disappears, and deletion of
+  dashboard snapshots idle for seven days.
 - GeoLite and AbuseIPDB enrichment, judge refreshes, and blacklist refreshes.
 - Expiry of password reset tokens, invitations, and terminal email rows.
-- Dashboard, source-statistics, reputation, and workspace-usage refreshes.
+- Source-statistics, reputation, and workspace-usage refreshes. Dashboard
+  snapshots have no routine: requests build them on demand.
 - Bounded DNS/robots caches and recurring instance heartbeats.
 
 Each has its own cadence and limits. The

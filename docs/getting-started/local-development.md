@@ -168,7 +168,7 @@ survives restarts. For a backend container built from the updated source, set
 the variable in the distribution repository's `.env` and recreate the backend.
 The default is `false`.
 
-Fixture mode serves the API, keeps checker settings and dashboard caches
+Fixture mode serves the API, keeps checker settings and dashboard snapshots
 current, and skips autonomous jobs and rotating listeners. This includes
 proxy checks, scraping, judge checks, alert evaluation and delivery, outbound
 mail, enrichment, retention, and cleanup. Account and workspace actions remain

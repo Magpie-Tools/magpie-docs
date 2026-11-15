@@ -10,7 +10,7 @@ have been recorded.
 | Measurement | What to use it for | What it does not prove |
 | --- | --- | --- |
 | Proxy inventory | Understand how much the workspace stores. | Total stored proxies are not all active or usable by a rotator. |
-| Check totals and weekly aggregates | Follow checker activity over time. | A check result is not a request made by your application. |
+| Checks this month and total checks | Follow the check requests charged to the workspace, retries included. "Checks this month" is the allowance period. | A check is not a request made by your application. |
 | Proxy history and snapshots | Compare inventory and health trends. | An older snapshot does not define a route's current health. |
 | Reputation breakdown | See how recorded quality evidence is distributed. | A good label does not replace a successful current check. |
 | Country breakdown | Inspect location data when enrichment is available. | Hostname routes do not acquire IP enrichment just because DNS resolves. |
@@ -32,24 +32,42 @@ If a healthy pool suddenly shrinks:
 4. Compare rotator filters and lifecycle state if routes look healthy but
    disappear from a pool.
 
-History and latest evidence commit together. Dashboard caches, source counts,
-and reputation refresh afterward, so brief differences are possible. For a
-growing delay, use [observe and troubleshoot](../learn/observe-and-troubleshoot.md)
+History and latest evidence commit together. Dashboard snapshots, source
+counts, and reputation refresh afterward, so brief differences are possible.
+For a growing delay, use [observe and troubleshoot](../learn/observe-and-troubleshoot.md)
 and [results and storage](../backend/results-and-storage.md).
 
-Successful dashboard cache hits are at most 30 seconds old. The first read
-after startup or an idle period, and any expired read, loads current data
-before responding and can take longer. Concurrent readers share that refresh.
-The background timer keeps only recently requested components warm for two
-minutes after their last read. The info summary, recent checks and fastest
-routes are tracked separately. Refreshing one does not warm the others.
-Opening a browser tab does not by itself keep these entries warm; the page
-loads on entry and manual refresh. Historical daily-counter backfill for an
-unread workspace waits until its dashboard counts are requested.
+## How current the dashboard is
+
+The dashboard comes from a snapshot that the backend stores in PostgreSQL and
+shares across backend instances. The header shows when the snapshot's data was
+collected and, when it is not current, its state:
+
+| State | Meaning |
+| --- | --- |
+| No label | The snapshot was published in the last 30 seconds, or during this page load. |
+| Not current | The snapshot is up to ten minutes old, or the last rebuild failed while older data is still valid. A rebuild runs when one is allowed. |
+| Updating | No valid snapshot yet, or a rebuild is running. The page asks again every few seconds for up to a minute. Parts without data show a dash. |
+| Update failed | The last rebuild failed and nothing valid is stored. The next rebuild is retried with a growing delay of up to ten minutes. |
+
+A page load that finds an old snapshot starts one rebuild and waits up to two
+seconds for it. Each workspace is rebuilt at most once every 30 seconds across
+all instances, and a workspace nobody views is never rebuilt.
+
+After a change to checker settings, health figures (alive routes, recent
+checks, fastest routes and the judge breakdown) stay empty while the change is
+being applied, and the header says so. Health computed under earlier settings
+is never shown. Inventory figures stay visible.
+
+"Checks this month" and "Total checks" are read live from the usage meter on
+every load. "Checks this month" uses the same count as the workspace
+allowance; the workspace page can run up to about a minute ahead because it
+also counts usage not yet written. "Total checks" adds the best available
+count for each month since the workspace was created: the checker's metered
+requests where they exist, and the statistics count for earlier months.
 
 ## Data sources
 
-- REST: `GET /api/getDashboardInfo`
-- GraphQL: `viewer.dashboard`, `viewer.proxyHistory`, `viewer.proxySnapshots`
+- GraphQL: `viewer.dashboardView`, `viewer.proxyHistory`, `viewer.proxySnapshots`
 
 For a guided first result, follow [your first proxy workflow](../learn/first-proxy.md).

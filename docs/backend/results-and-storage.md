@@ -122,15 +122,15 @@ PostgreSQL and Redis backups preserve those relationships.
 ```mermaid
 flowchart TD
     accTitle: Reads after statistics commit
-    accDescr: Committed current evidence supports health and rotation. Reputation, proxy filters, source counts, and dashboard caches refresh asynchronously.
+    accDescr: Committed current evidence supports health and rotation. Reputation, proxy filters and source counts refresh asynchronously; dashboard snapshots rebuild when a request finds them out of date.
     Commit["Committed history and latest evidence"] --> Route["Route health reads and TCP rotation eligibility"]
     Commit --> Rep["Durable reputation refresh work"]
     Commit --> Filters["Proxy filter/read-model refresh"]
     Filters --> Sources["Coalesced source statistics refresh"]
-    Commit --> Dashboard["Dashboard cache refresh"]
+    Commit --> Dashboard["Dashboard snapshot rebuild on request"]
 ```
 
-Reputation, source counts, filters, and dashboard caches can lag history.
+Reputation, source counts, filters, and dashboard snapshots can lag history.
 They are derived views, rather than another copy of an individual check's
 durability guarantee. Health reads also verify the current checker generation,
 so a stale settings projection cannot make old evidence current.
@@ -164,8 +164,9 @@ readiness before sending traffic, and include this migration work in upgrade
 and recovery timing.
 
 Retention keeps storage bounded. Detailed history and response bodies have
-separate retention settings. Monthly partitions are prepared ahead of time,
-and older daily counters compact into lifetime totals. Obsolete latest-evidence
+separate retention settings. Monthly partitions are prepared ahead of time.
+Dashboard check figures come from the per-workspace monthly usage rows, which
+are not pruned, so no per-route check counter is kept. Obsolete latest-evidence
 cleanup uses bounded key-ordered pages and resumes unfinished scans on later
 maintenance passes. It preserves dirty workspace namespaces and matching
 legacy, default, and tag-override evidence, so referenced current checks remain

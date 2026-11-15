@@ -35,8 +35,7 @@ flowchart TD
     Prepare --> Reconcile["Reconcile saved failure and capacity state"]
     Reconcile --> Fork["Launch runtime work"]
     Fork --> Queues["Reconstruct queues under shared leadership"]
-    Fork --> Prewarm["Optional read-cache prewarm: five-second deadline"]
-    Prewarm --> Drains["Register result consumers and read-model drains"]
+    Fork --> Drains["Register result consumers and read-model drains"]
     Drains --> Jobs["Listeners, caches, checker, scraper, maintenance"]
     Jobs --> API["Open HTTP server"]
     Queues --> Ready["Queue bootstrap can become ready"]
@@ -53,29 +52,15 @@ leadership so replicas do not rebuild the same queues independently. The
 default `STARTUP_QUEUE_BOOTSTRAP_ASYNC=true` allows the API to open while this
 work runs. Queue bootstrap failures retry after ten seconds.
 
-Normal startup waits for optional dashboard cache prewarming with one
-five-second total deadline. It uses the requested-component refresh path; a
-new process has no dashboard demand and no work to prewarm. An incomplete
-optional refresh does not prevent startup. The timer still runs every
-30 seconds, but refreshes only components read within the preceding two
-minutes. Info, recent checks and fastest routes have separate demand keys,
-including each normalized list limit. Internal refreshes do not renew demand.
-Cache prewarming is not a readiness requirement or a substitute for validating
-dashboard latency.
+Startup does not prewarm dashboards. Each instance constructs one dashboard
+service after the database opens; snapshots are stored in PostgreSQL and survive
+restarts, so a new process serves existing snapshots at once and rebuilds a
+workspace's snapshot only when a request finds it out of date. See
+[runtime jobs](../reference/runtime-jobs.md) for admission and build limits.
 
-A successful cache hit is at most 30 seconds old. Cold and expired reads load
-synchronously or join the refresh already running for that component. REST
-and GraphQL pass their request contexts to the loaders. Each refresh also has
-a 30-second child deadline, and its database work must finish or cancel before
-the shared refresh completes. A failed refresh preserves the previous stored
-entry without making an expired entry a valid hit. Existing checker-generation
-and dirty-health guards still apply. Idle demand and cache entries expire;
-process restarts clear demand.
-
-Prewarming finishes or cancels before runtime listeners open. Result consumers
-and read-model drains are registered before listeners, checker and scraper
-workers can produce traffic. A termination signal during startup cancels the
-prewarm and prevents the remaining startup work and API from beginning. Already
+Result consumers and read-model drains are registered before listeners, checker
+and scraper workers can produce traffic. A termination signal during startup
+prevents the remaining startup work and API from beginning. Already
 registered runtime groups still stop in their normal drain order.
 
 The instance can start with Redis unavailable and retry synchronization later.
@@ -121,10 +106,10 @@ their consumers had gone. Stopping read models too early would miss
 invalidations from final commits. These dependencies explain the shutdown
 order in `Runtime.Shutdown`.
 
-Dashboard jobs pass cancellation through their database reads and delayed
-counter backfills. Stopping the producer group cancels an in-flight refresh
-instead of waiting for every workspace query to finish. Failed refreshes leave
-the previous cache snapshot available.
+The dashboard service stops with the producer group. Stopping cancels its
+in-flight snapshot builds, which end their database statements, and clears their
+leases without counting a failure, so another instance can build at once. The
+previous snapshot stays available.
 
 Memory statistics consumers retry unfinished suffixes until their buffers are
 empty. Each flush shares one 30-second preparation/write deadline across its
@@ -154,10 +139,8 @@ volatile buffers. [Results and replay](results-and-storage.md) distinguishes
 pending stream entries from memory-only results.
 
 `DEVELOPMENT_FIXTURES=true` takes a separate path. It loads fixture settings and
-read caches but skips autonomous jobs and rotating listeners. Its cache prewarm
-explicitly visits all workspaces, has the same five-second total deadline, and
-a prewarm failure still aborts fixture startup. It does not create ongoing
-dashboard demand. Fixture mode is rejected in production.
+serves dashboard snapshots but skips autonomous jobs and rotating listeners.
+Fixture mode is rejected in production.
 
 <details>
 <summary>Checkpoint: why can healthz return 200 while readyz returns 503?</summary>

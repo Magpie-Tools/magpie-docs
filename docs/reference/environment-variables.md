@@ -75,7 +75,7 @@ Production mode can be inferred from any of:
 Values `prod` or `production` are treated as production.
 
 - `STRICT_SECRET_VALIDATION`: override strict startup validation for `JWT_SECRET` and `PROXY_ENCRYPTION_KEY`.
-- `DEVELOPMENT_FIXTURES` (default `false`): local development mode that keeps the API, checker settings, and dashboard cache available while skipping autonomous jobs and rotating listeners. API-created rotators are saved without opening TCP or UDP listeners. Restart with fixture mode disabled to activate them. Use with the [repeatable test dataset](../getting-started/local-development.md#restore-development-test-data) to preserve synthetic results. Production mode rejects `true`.
+- `DEVELOPMENT_FIXTURES` (default `false`): local development mode that keeps the API, checker settings, and dashboard snapshots available while skipping autonomous jobs and rotating listeners. API-created rotators are saved without opening TCP or UDP listeners. Restart with fixture mode disabled to activate them. Use with the [repeatable test dataset](../getting-started/local-development.md#restore-development-test-data) to preserve synthetic results. Production mode rejects `true`.
 - `MAGPIE_DEV_PASSWORD`: password used only by `go run ./cmd/seed-dev-data --reset` when it creates missing development accounts. Existing passwords remain unchanged. This variable is not needed by the backend server.
 
 ## API hardening
@@ -313,9 +313,21 @@ tuning option.
 | `PROXY_STATISTICS_AUTO_PARTITION_MIGRATION` | `true` | Permit automatic conversion of the existing history table during schema migration. |
 | `PROXY_STATISTICS_PARTITION_PRECREATE_MONTHS` | `2` | Future months prepared for history partitions. |
 | `PROXY_STATISTICS_PARTITION_PAST_MONTHS` | Retention days / 30 + 1, minimum `2` | Past partition range prepared by migration/maintenance. |
-| `PROXY_DAILY_CHECK_RETENTION_DAYS` | `30`, minimum `8` | Compact older UTC daily counters into lifetime totals. All-time dashboard counts survive. |
 | `PROXY_STATISTICS_LEDGER_RETENTION_BATCH_SIZE` | `50000` | Replay identities retired per DB batch after durable stream progress. |
 | `PROXY_STATISTICS_LEDGER_RETENTION_MAX_BATCHES` | `240` | Ledger batches per pass, run each minute with a 45-second budget. |
+
+### Dashboard snapshots
+
+Dashboard snapshots are stored in PostgreSQL and built on demand by the
+instance that receives a request for an out-of-date snapshot. The defaults are
+starting values; measure builds on your largest workspaces before raising them.
+
+| Variable | Default | Meaning |
+| --- | ---: | --- |
+| `DASHBOARD_BUILD_DEADLINE` | `30s` | Duration string. Deadline of one build, independent of the HTTP write timeout. Each statement's timeout is capped at the remaining budget. The lease lasts the deadline plus 15 seconds. |
+| `DASHBOARD_BUILD_CLUSTER_LIMIT` | `4` | Most builds admitted at once across all backend instances. |
+| `DASHBOARD_BUILD_INSTANCE_LIMIT` | `2` | Most builds one instance runs at once. |
+| `DASHBOARD_BUILD_STATEMENT_CONCURRENCY` | `2` | Most data statements one build runs at once. |
 
 ### Reputation and source summaries
 

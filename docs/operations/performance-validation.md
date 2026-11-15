@@ -102,16 +102,16 @@ five minutes to 30 seconds. Explicit single-mode `REDIS_URL` values still
 override the client defaults. A normal-path benchmark does not expose those
 outage latencies.
 
-Include cold dashboard reads when validating demand-based caching. Successful
-cache hits have a 30-second maximum age, and the timer keeps only components
-requested within the last two minutes warm. A restart clears this process-local
-demand. Record the first synchronous load separately, then measure the actual
-requested-component background refresh alongside checker and persisted
-projection progress for every fixture workspace. An info-only REST read must
-not warm recent-check or fastest-route components. Delayed historical-counter
-backfills can write and must be included in completion and cleanup evidence.
-Cold preparation time provides no credit toward the unchanged load durations
-or latency budgets. A private diagnostic alone does not establish a capacity
+Include cold dashboard reads when validating dashboard snapshots. A warm view is
+one joined read; a view of a snapshot older than 30 seconds starts at most one
+build per workspace across the cluster and waits at most two seconds. Record
+the build-time distribution of ordinary million-route workspaces separately
+from request latency, together with checker throughput and projection lag while
+builds run. Ordinary builds must finish within `DASHBOARD_BUILD_DEADLINE`; set
+the deadline and `DASHBOARD_BUILD_CLUSTER_LIMIT` from these measurements. After
+a lease expires, its statements stop at their statement timeout, so measure how
+long expired builds overlap their successors. Cold preparation time provides no
+credit toward the unchanged load durations or latency budgets. A private diagnostic alone does not establish a capacity
 improvement or release readiness.
 
 During startup queue loading, select each physical route once when it has an
@@ -380,22 +380,16 @@ shared reads and temporary-file I/O: the scoped join can trade more temporary
 I/O for fewer repeated index probes. Stopped-data equivalence and query timings
 do not establish sustained capacity or replace recovery, smoke or load gates.
 
-Cold dashboard country counts, reputation counts and top-proxy selection share
-one materialized active-workspace projection. Include the first dashboard
-request in validation and measure its complete latency, including joined legacy
-daily-check backfill. Record base-table reads and temporary-file I/O together:
+Dashboard country counts, reputation counts and top-proxy selection share
+one materialized active-workspace projection in a snapshot build. Measure the
+build's complete duration. Record base-table reads and temporary-file I/O together:
 sharing the input reduces repeated scans but can increase temporary storage.
 Check tenant/lifecycle scope, null scores, tie order, cancellation and retained
-history. Read-only probes that prevent backfill writes cannot qualify readiness;
-query equivalence or lower read counts cannot replace the full load gate.
+history. Query equivalence or lower read counts cannot replace the full load gate.
 
-Dashboard check counts combine retained counters and raw day-boundary results
-before one current-ownership join. Verify exact UTC cutoffs, compacted history,
-successful and unsuccessful attempts, legacy NULL results and current ownership
-across active, paused and archived management. Record command counts, parallel
-plans, shared reads and temporary I/O together. The combined count read uses
-one SQL statement; its result does not replace complete cold-request latency,
-joined backfill, clean recovery or sustained load evidence.
+Dashboard check figures read the workspace's monthly usage rows in the same
+statement as the snapshot: two primary-key range reads over about one row per
+month, independent of route count and of other workspaces.
 
 After a recognized projection child deadline, the updater retains a smaller
 statement width within that owner batch. Two consecutive full-width commits
@@ -412,8 +406,7 @@ smaller statements and unit delay fixtures do not establish sustained capacity.
 ### Long-running storage growth
 
 Ledger maintenance persists a replay floor before retiring event identities.
-Measure `proxy_statistic_events` and its indexes, `proxy_statistic_streams`, and
-`proxy_check_totals`. Monitor pending age and maintenance progress; an old pending
+Measure `proxy_statistic_events` and its indexes and `proxy_statistic_streams`. Monitor pending age and maintenance progress; an old pending
 event delays retirement. Accelerated regressions do not establish stability over
 months. Sustained soaks should include dependency outages, import/delete churn,
 month boundaries, and idle tunnels.
