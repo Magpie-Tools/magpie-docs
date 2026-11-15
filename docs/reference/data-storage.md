@@ -72,10 +72,18 @@ succeeds.
 
 Runtime maintenance precreates monthly partitions. `proxy_statistic_streams`
 stores replay floors so retired event identities still reject historical replays;
-restore PostgreSQL and Redis from coordinated backups. Older `proxy_daily_checks`
-compact into one `proxy_check_totals` row per route, preserving all-time counts
-and preventing repeated backfill. Orphan cleanup drains daily counts, totals, and
-backfill markers in batches of 5,000 route IDs per table.
+restore PostgreSQL and Redis from coordinated backups.
+
+`dashboard_snapshots` stores one dashboard snapshot per workspace and payload
+version: a JSON payload of at most 256 KiB, the checker generation its health
+parts were built under, and the lease that fences rebuilds, whose epochs come
+from `dashboard_lease_epoch_seq`. Rows cascade with their workspace; orphan
+cleanup deletes rows nobody has touched for seven days. They are derived and can
+be deleted at any time; the next dashboard request rebuilds them. Dashboard check
+figures read `workspace_usage_periods`.
+
+`proxy_daily_checks`, `proxy_check_totals` and `proxy_daily_check_proxy_backfills`
+are no longer written or read. A later release drops them.
 
 `scrape_source_tags` stores each workspace source subscription's automatic tag
 selection. Its rules reference the existing workspace tag catalog. Source or tag

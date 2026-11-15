@@ -201,8 +201,9 @@ key, and lifetime check totals. Moving large DEFAULT-partition history can
 extend the maintenance window. Keep all backend instances stopped during
 `--migrate-only` and retain coordinated PostgreSQL and Redis backups.
 
-After migration, daily compaction preserves all-time counts, and partition
-precreation continues with `DB_AUTO_MIGRATE=false`. See
+After migration, partition precreation continues with `DB_AUTO_MIGRATE=false`.
+The per-route daily check counters this migration introduced are no longer
+written since the dashboard snapshot release below. See
 [results and storage](../backend/results-and-storage.md) for retention,
 replay, and read-model behavior.
 
@@ -272,6 +273,38 @@ The journal retains temporary removal records so a reimported proxy does not
 reuse settings from its previous tag membership. Retention maintenance expires
 committed removal records after 24 hours; workspace deletion removes its journal.
 
+### Dashboard snapshots
+
+Update the frontend and every backend instance together. This release stores
+dashboards as shared snapshots in PostgreSQL (`dashboard_snapshots`) instead of
+a per-instance cache, and adds the `dashboard_lease_epoch_seq` sequence. The
+migration creates both; no data is converted. The first dashboard view of each
+workspace after the upgrade builds its snapshot and can briefly show
+"Updating".
+
+- "Checks this week" is replaced by "Checks this month", the allowance period,
+  and "Total checks" now counts only the workspace's own check requests since
+  the workspace was created. Existing installations see a lower total than
+  before, which counted checks of the workspace's routes by any workspace.
+- `PROXY_DAILY_CHECK_RETENTION_DAYS` is removed. The per-route daily check
+  counters stop being written; their tables stay until the next release.
+- New optional settings tune snapshot builds: `DASHBOARD_BUILD_DEADLINE`,
+  `DASHBOARD_BUILD_CLUSTER_LIMIT`, `DASHBOARD_BUILD_INSTANCE_LIMIT` and
+  `DASHBOARD_BUILD_STATEMENT_CONCURRENCY`. See the
+  [environment reference](../reference/environment-variables.md#dashboard-snapshots).
+- `GET /api/getDashboardInfo` and the GraphQL fields `viewer.dashboard`,
+  `viewer.recentProxyChecks` and `viewer.fastestAliveProxies` are removed. Use
+  [`viewer.dashboardView`](../api/graphql.md#dashboard-view).
+
+### Dropping the daily check counter tables
+
+The release after the dashboard snapshot release drops `proxy_daily_checks`,
+`proxy_check_totals` and `proxy_daily_check_proxy_backfills`. Multi-instance
+installations must install the dashboard snapshot release before it and must
+not skip it: an older backend still writes daily counters, and its statistics
+transactions fail once the tables are gone. Upgrades that skip releases keep
+the usual procedure of stopping every backend before migration.
+
 ## Frontend and API compatibility
 
 Deploy compatible frontend and backend releases together when crossing these
@@ -286,6 +319,12 @@ changes:
   for scrape source sorting. Older backends may lack the endpoint, discard the
   preference, or ignore the sort. See [account APIs](../api/rest-auth-and-user.md)
   and [scrape source APIs](../api/rest-scraping-sources.md).
+- The dashboard reads `viewer.dashboardView`, which replaces
+  `viewer.dashboard`, `viewer.recentProxyChecks`, `viewer.fastestAliveProxies`
+  and `GET /api/getDashboardInfo` in the same release. During a rolling upgrade,
+  or in a browser tab still running the previous frontend, the dashboard query
+  fails validation in either direction and the page shows its error state.
+  Retrying resends the same query; reload the page.
 - GraphQL clients must omit `scrapingSources` from `UpdateUserSettingsInput`.
   The former no-op input now fails validation. Manage sources through REST.
   Settings mutations also reject negative or oversized checker integers.

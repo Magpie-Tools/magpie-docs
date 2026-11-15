@@ -111,12 +111,6 @@ synchronization failures return `503`. A successful request still requires
 active workspace management, eligible settings, judges, and functioning
 statistics ingestion for a new result to become visible.
 
-## `GET /api/getDashboardInfo`
-
-Requires viewer or higher. Returns dashboard metrics for the selected workspace.
-
-Includes totals, weekly totals, reputation/country breakdowns, judge success aggregates, and optional `top_reputation_proxy`.
-
 ## `GET /api/releases`
 
 Public endpoint (no auth required).

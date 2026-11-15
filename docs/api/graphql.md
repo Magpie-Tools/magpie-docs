@@ -76,11 +76,22 @@ The following larger query selects dashboard data and one proxy page. Send
 ```graphql
 query DashboardData($proxyPage: Int!) {
   viewer {
-    dashboard {
-      totalChecks
-      totalScraped
-      reputationBreakdown { good neutral poor unknown }
-      countryBreakdown { country count }
+    dashboardView {
+      status
+      rebuilding
+      healthMasked
+      collectedAt
+      info {
+        totalChecks
+        checksThisMonth
+        totalScraped
+        reputationBreakdown { good neutral poor unknown }
+        countryBreakdown { country count }
+      }
+      recentProxyChecks(limit: 8) { id ip port alive latestCheck }
+      fastestAliveProxies(limit: 100) { id ip port responseTime country }
+      aliveCount
+      proxyCount
     }
     proxyCount
     proxyLimit
@@ -113,6 +124,38 @@ query DashboardData($proxyPage: Int!) {
   }
 }
 ```
+
+## Dashboard view
+
+`viewer.dashboardView` serves the dashboard from a snapshot shared by all
+backend instances. `status` says how current it is:
+
+| Status | Meaning |
+| --- | --- |
+| `FRESH` | Published less than 30 seconds ago, or during this request. |
+| `STALE` | Older, up to ten minutes, or the last rebuild failed while some part is still valid. |
+| `PENDING` | No valid snapshot yet; a rebuild is pending or running. |
+| `FAILED` | The last rebuild failed and no part is valid. |
+
+A request that finds a snapshot older than 30 seconds, or one without health
+for the current checker settings, starts at most one rebuild and waits up to
+two seconds for it. `rebuilding` is true while a rebuild runs on any instance.
+Clients that see `PENDING` or `rebuilding` can ask again after a few seconds;
+the dashboard page does so for up to a minute.
+
+- Snapshot fields are null while the snapshot has no valid value for them,
+  never zero. `info` itself is never null.
+- `info.totalChecks` and `info.checksThisMonth` are read live from the usage
+  meter on every request, in every status. `collectedAt` does not describe
+  them. Both count outbound check requests, retries included; they are Floats
+  because lifetime totals exceed the 32-bit GraphQL `Int`.
+- While checker settings are being applied, `healthMasked` is true and
+  `recentProxyChecks`, `fastestAliveProxies` and `info.judgeValidProxies` are
+  empty lists. Health computed under earlier settings is never returned.
+- `recentProxyChecks` accepts a limit up to 50 and `fastestAliveProxies` up to
+  100.
+- The field is resolved once per request: aliases share one result and one
+  wait. `proxySnapshots` takes its latest alive point from the same snapshot.
 
 ## Update settings mutation
 
