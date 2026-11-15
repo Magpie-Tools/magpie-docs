@@ -170,7 +170,8 @@ cleanup uses bounded key-ordered pages and resumes unfinished scans on later
 maintenance passes. It preserves dirty workspace namespaces and matching
 legacy, default, and tag-override evidence, so referenced current checks remain
 pinned in history. Successful checks skip already-zero failure streak updates,
-and metadata enrichment skips rows whose country and type are unchanged.
+failed checks skip streaks already at 255, and metadata enrichment skips rows
+whose country and type are unchanged.
 The
 [storage reference](../reference/data-storage.md) describes table responsibilities;
 [backup and recovery](../operations/backup-and-recovery.md) covers restoration.
