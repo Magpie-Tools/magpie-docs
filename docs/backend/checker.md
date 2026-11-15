@@ -69,6 +69,12 @@ later can cancel that addition.
 proxy protocol, transport, timeout, and retry budget match. Workspace
 validation still happens independently.
 
+Each workspace rotates through its judges round-robin. When several workspaces
+list the same judges for a protocol, the first of them picks the judge for the
+cycle and the rest reuse it, even if their validation rules differ. A route
+owned by many workspaces on default settings therefore sends one request per
+protocol rather than one per judge.
+
 ```mermaid
 flowchart TD
     accTitle: Shared request with separate verdicts
@@ -120,6 +126,10 @@ workspace participating in an eligible cycle:
 | At least one successful check | Reset failure streak. |
 | Eligible checks, none successful | Increment streak; apply configured Pause or Delete at its threshold. |
 | No eligible checks | Leave streak unchanged. |
+
+The streak stops increasing at 255, the highest failure threshold a workspace
+can set, so a dead route stops rewriting its managed proxy rows. A streak at
+255 still meets every threshold.
 
 Disabled protocols or missing/blocked judges can leave no eligible checks.
 An empty selection does not itself pause a proxy, and its active management

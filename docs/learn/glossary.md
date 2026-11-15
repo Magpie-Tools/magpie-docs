@@ -39,7 +39,7 @@ records the canonical resource vocabulary.
 | Check evidence | A result's verdict and configuration identity for a participating workspace. |
 | Current health | This workspace's health assessment using evidence matching its current effective settings. |
 | Unknown health | No applicable evidence, or a pending settings refresh. It does not prove failure. |
-| Failure streak | Consecutive eligible cycles with no success for one managed proxy. A successful cycle resets it. |
+| Failure streak | Consecutive eligible cycles with no success for one managed proxy, up to 255. A successful cycle resets it. |
 | Reputation | A score or label derived from check and enrichment evidence. It is separate from current health. |
 
 ## Discovery and traffic
