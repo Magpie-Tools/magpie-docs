@@ -276,11 +276,46 @@ that workspace to checker and rotator work.
 
 Requires auth.
 
-Query params:
+Without `page`, the endpoint returns the latest checks:
 
 - `limit` (optional positive integer, default `100`)
 
-Response:
+With `page`, it returns one filtered, sorted page of the history plus totals:
+
+- `page` (positive integer; values below 1 become 1)
+- `page_size` (default `20`, at most `100`)
+- `sort`: `checked` (default), `response`, `attempt`, `protocol`, `anonymity`, or `judge`
+- `order`: `desc` (default) or `asc`
+- `status`: `alive` or `dead`, using this workspace's verdict
+- `protocol` (`http`, `https`, `socks4`, `socks5`) and `transport` (`tcp`, `quic`)
+- `judge_id`
+- `settings`: `current`, or `previous` (which includes legacy rows)
+- `hours`: `1`, `24`, `168`, or `720`; omit for any time
+
+Unknown values are ignored. Sorting by `response` puts failed checks last in
+both directions, because their value is the timeout rather than a latency.
+Sorting by `anonymity` ranks transparent, anonymous, then elite, with unknown
+levels last in both directions. Ties are broken by check time, newest first.
+
+```json
+{
+  "statistics": [ ... ],
+  "total": 37,
+  "page": 1,
+  "page_size": 20,
+  "counts": { "alive": 375, "dead": 37 },
+  "options": {
+    "protocols": [{ "protocol": "socks5", "transport": "tcp" }],
+    "judges": [{ "id": 3, "url": "http://httpbin.org/get" }]
+  }
+}
+```
+
+`total` matches every filter. `counts` ignores the `status` filter, so it shows
+how many alive and dead checks the other filters leave. `options` lists the
+protocol/transport pairs and judges in this workspace's history for the proxy.
+
+Response without `page`:
 
 ```json
 {

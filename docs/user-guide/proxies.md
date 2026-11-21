@@ -120,7 +120,16 @@ Deleting a tag removes that tag from every proxy and source rule without deletin
 
 ## Proxy detail and stats
 
+The **Check history** card on a proxy's detail page lists every check for that
+proxy, 20 per page by default. Filter by status (all, alive, or dead; the
+counts follow the other filters), protocol and transport, judge, check
+settings (current, or previous and legacy), and period. Click a column header to
+sort it: once ascending, again descending, and a third time to return to newest
+first. On phones, the filters other than status open in a **Filters** sheet.
+Select a check's time to see the judge response.
+
 - `GET /api/proxies/{id}`
+- `GET /api/proxies/{id}/statistics?page=...` (see the [REST reference](../api/rest-proxies.md))
 - `GET /api/proxies/{id}/statistics?limit=...`
 - `GET /api/proxies/{id}/statistics/hourly?hours=...`
 - `GET /api/proxies/{id}/statistics/{statisticId}`
