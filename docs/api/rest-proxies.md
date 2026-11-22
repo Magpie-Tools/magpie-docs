@@ -259,6 +259,28 @@ optional `pause_reason`. Its `alive` field is `true`, `false`, or `null` for
 current alive, dead, or unknown health. `latest_statistic` uses only evidence
 matching this workspace's current effective checker settings.
 
+`protocols` lists the current result of each checked protocol, ordered by
+protocol, under the same rule. `recent` holds the workspace's verdicts for that
+protocol's latest checks with the same settings, up to 20, oldest first. The
+list is empty before the first current check.
+
+```json
+{
+  "protocols": [
+    {
+      "protocol": "http",
+      "transport": "tcp",
+      "alive": true,
+      "response_time": 412,
+      "attempt": 0,
+      "anonymity_level": "elite",
+      "checked_at": "2026-11-21T20:31:00Z",
+      "recent": [true, true, false, true]
+    }
+  ]
+}
+```
+
 ## `PUT /api/proxies/{id}/lifecycle`
 
 Requires operator or higher. Sets the selected workspace's managed-proxy state
